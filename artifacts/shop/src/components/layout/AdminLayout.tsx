@@ -109,7 +109,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       {/* Main content */}
       <div className="flex flex-1 flex-col min-w-0 md:ml-64">
         {/* Top bar */}
-        <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b bg-white/90 backdrop-blur px-4 md:px-6 shadow-sm">
+        <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b bg-white px-4 md:px-6 shadow-sm">
           <button
             className="md:hidden text-slate-500 hover:text-slate-900"
             onClick={() => setSheetOpen(true)}

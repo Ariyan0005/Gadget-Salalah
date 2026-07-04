@@ -37,7 +37,7 @@ export function ProductCard({ product }: { product: Product }) {
   return (
     <Link
       href={`/products/${product.id}`}
-      className="group relative flex flex-col overflow-hidden rounded-2xl bg-white border border-border/60 shadow-sm hover:shadow-md hover:border-primary/20 transition-all duration-200 dark:bg-card"
+      className="group relative flex flex-col overflow-hidden rounded-2xl bg-white border border-border/60 shadow-sm hover:shadow-md hover:border-primary/20 transition-shadow duration-200 dark:bg-card"
     >
       {/* Image */}
       <div className="relative aspect-square overflow-hidden bg-slate-50 dark:bg-muted">
@@ -45,7 +45,8 @@ export function ProductCard({ product }: { product: Product }) {
           <img
             src={product.imageUrl}
             alt={product.name}
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            loading="lazy"
+            className="h-full w-full object-cover md:transition-transform md:duration-300 md:group-hover:scale-105"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/5 to-accent/10">
