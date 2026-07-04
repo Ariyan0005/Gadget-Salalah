@@ -1,0 +1,20 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "Pw401sSn8PnSYZpL6dv_Z"
+uri = "file://artifacts/shop/public/images/hero-phones.png"
+type = "image"
+title = "Hero banner mobile phones"
+
+[[generated]]
+id = "2UZA54nARd33pbDfSiL_p"
+uri = "file://artifacts/shop/public/images/hero-accessories.png"
+type = "image"
+title = "Hero banner accessories"
+
+[[generated]]
+id = "mWQLy20LwAN5swTegJ98Q"
+uri = "file://artifacts/shop/public/images/promo-watches.png"
+type = "image"
+title = "Promo banner watches"

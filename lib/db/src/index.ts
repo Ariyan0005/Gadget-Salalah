@@ -10,7 +10,19 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+// Supabase pooler uses a self-signed cert chain.
+// Strip ?sslmode=* from the URL so pg-connection-string doesn't set its own
+// ssl config that would override ours (which has rejectUnauthorized: false).
+const rawUrl = process.env.DATABASE_URL;
+const isSupabase = rawUrl.includes("supabase.com");
+const connectionString = isSupabase
+  ? rawUrl.replace(/([?&])sslmode=[^&]*/g, "$1").replace(/[?&]$/, "")
+  : rawUrl;
+
+export const pool = new Pool({
+  connectionString,
+  ssl: isSupabase ? { rejectUnauthorized: false } : false,
+});
 export const db = drizzle(pool, { schema });
 
 export * from "./schema";
