@@ -9,7 +9,7 @@ set -euo pipefail
 REPO_DIR="/var/www/gadgetsalalah"
 FRONTEND_DIST="$REPO_DIR/artifacts/shop/dist/public"
 NGINX_ROOT="/var/www/html/gadgetsalalah"   # nginx static root — adjust if different
-API_PM2_NAME="gadget-api"
+API_PM2_NAME="gadgetsalalah-api"
 
 cd "$REPO_DIR"
 
