@@ -21,6 +21,7 @@ const NAV_LINKS = [
   { href: "/",               label: "Home",           icon: HomeIcon, exact: true },
   { href: "/products",       label: "Products",       icon: Grid3X3  },
   { href: "/mobile-service", label: "Mobile Service", icon: Wrench   },
+  { href: "/spare-parts",    label: "Spare Parts",    icon: Puzzle,  subOf: "/mobile-service" },
   { href: "/track",          label: "Track Order",    icon: Navigation },
 ];
 
@@ -120,13 +121,19 @@ export function Header() {
                       Navigation
                     </p>
 
-                    {NAV_LINKS.map(({ href, label, icon: Icon, exact }) => {
+                    {NAV_LINKS.map(({ href, label, icon: Icon, exact, subOf }) => {
                       const active = exact ? location === href : location.startsWith(href);
+                      const isSubItem = !!subOf;
                       return (
                         <Link key={href} href={href} onClick={close}
                           className={cn(
                             "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors",
-                            active ? "bg-accent/10 text-accent" : "hover:bg-muted text-foreground"
+                            isSubItem && "ml-6 mt-0.5",
+                            active
+                              ? "bg-accent/10 text-accent"
+                              : isSubItem
+                              ? "hover:bg-muted text-muted-foreground hover:text-foreground"
+                              : "hover:bg-muted text-foreground"
                           )}>
                           <Icon className="h-4 w-4 shrink-0" />
                           {label}
@@ -134,21 +141,6 @@ export function Header() {
                         </Link>
                       );
                     })}
-
-                    {/* Spare Parts — indented under Mobile Service */}
-                    <Link href={SPARE_PARTS.href} onClick={close}
-                      className={cn(
-                        "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors ml-6 mt-0.5",
-                        location.startsWith(SPARE_PARTS.href)
-                          ? "bg-accent/10 text-accent"
-                          : "hover:bg-muted text-muted-foreground hover:text-foreground"
-                      )}>
-                      <SPARE_PARTS.icon className="h-4 w-4 shrink-0" />
-                      {SPARE_PARTS.label}
-                      {location.startsWith(SPARE_PARTS.href) && (
-                        <ChevronRight className="ml-auto h-3.5 w-3.5 opacity-40" />
-                      )}
-                    </Link>
                   </div>
 
                   {/* ── CATEGORIES section ── */}

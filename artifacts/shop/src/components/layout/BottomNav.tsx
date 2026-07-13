@@ -20,7 +20,7 @@ export function BottomNav() {
       <div className="flex items-stretch h-[60px] px-1">
         {ITEMS.map(({ href, label, icon: Icon, exact, isAccount, authRequired }) => {
           const finalHref = isAccount
-            ? (user ? "/orders" : "/login")
+            ? (user ? "/account" : "/login")
             : authRequired && !user
             ? "/login"
             : href;

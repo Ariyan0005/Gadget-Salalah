@@ -22,6 +22,7 @@ import Contact from "./pages/contact";
 import MobileService from "./pages/mobile-service";
 import SpareParts from "./pages/spare-parts";
 import AccountPage from "./pages/account";
+import SettingsPage from "./pages/settings";
 
 // Admin
 import AdminDashboard from "./pages/admin/index";
@@ -68,6 +69,7 @@ function Router() {
       <Route path="/register"><AuthPage isLogin={false} /></Route>
 
       <Route path="/account"><PrivateRoute component={AccountPage} /></Route>
+      <Route path="/settings"><PrivateRoute component={SettingsPage} /></Route>
       <Route path="/cart"><PrivateRoute component={Cart} /></Route>
       <Route path="/checkout"><PrivateRoute component={Checkout} /></Route>
       <Route path="/orders"><PrivateRoute component={OrdersList} /></Route>
