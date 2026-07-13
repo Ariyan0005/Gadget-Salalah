@@ -39,7 +39,7 @@ export default function Contact() {
                 <div>
                   <h3 className="font-semibold text-lg mb-1">Our Store</h3>
                   <p className="text-muted-foreground text-sm leading-relaxed">
-                    Central Salalah<br/>
+                    An Nahdah St, Central Salalah<br/>
                     Salalah, Dhofar<br/>
                     Sultanate of Oman
                   </p>
