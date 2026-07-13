@@ -6,6 +6,17 @@ import { CreateProductBody, UpdateProductBody, UpdateStockBody } from "@workspac
 
 const router = Router();
 
+/** Convert a product name into a URL-safe slug */
+function generateSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, "")   // strip non-word chars (keeps letters, digits, _, -, space)
+    .trim()
+    .replace(/[\s_]+/g, "-")    // spaces/underscores → hyphens
+    .replace(/-+/g, "-")        // collapse multiple hyphens
+    .slice(0, 90);              // max length
+}
+
 function productWithCategory(p: Record<string, unknown>, catName?: string | null) {
   return {
     ...p,
@@ -121,8 +132,21 @@ router.get("/products", async (req, res) => {
 router.post("/products", authenticate, requireAdmin, async (req: AuthRequest, res) => {
   try {
     const body = CreateProductBody.parse(req.body);
+
+    // Auto-generate unique slug from name (ignores any slug sent in body)
+    const baseSlug = generateSlug(body.name);
+    let slug = baseSlug;
+    let suffix = 0;
+    while (true) {
+      const [existing] = await db.select({ id: productsTable.id })
+        .from(productsTable).where(eq(productsTable.slug, slug));
+      if (!existing) break;
+      slug = `${baseSlug}-${++suffix}`;
+    }
+
     const [product] = await db.insert(productsTable).values({
       ...body,
+      slug,
       price: String(body.price),
       originalPrice: body.originalPrice != null ? String(body.originalPrice) : undefined,
     }).returning();
@@ -136,8 +160,11 @@ router.post("/products", authenticate, requireAdmin, async (req: AuthRequest, re
 
 router.get("/products/:id", async (req, res) => {
   try {
-    const id = Number(req.params.id);
-    const [product] = await db.select().from(productsTable).where(eq(productsTable.id, id));
+    const param = req.params.id;
+    const isNumeric = /^\d+$/.test(param);
+    const [product] = isNumeric
+      ? await db.select().from(productsTable).where(eq(productsTable.id, Number(param)))
+      : await db.select().from(productsTable).where(eq(productsTable.slug, param));
     if (!product) { res.status(404).json({ error: "Not found" }); return; }
     const [cat] = await db.select({ name: categoriesTable.name }).from(categoriesTable).where(eq(categoriesTable.id, product.categoryId));
     res.json(productWithCategory(product as unknown as Record<string, unknown>, cat?.name));
@@ -154,6 +181,20 @@ router.patch("/products/:id", authenticate, requireAdmin, async (req: AuthReques
     const updateData: Record<string, unknown> = { ...body };
     if (body.price !== undefined) updateData.price = String(body.price);
     if (body.originalPrice !== undefined) updateData.originalPrice = String(body.originalPrice);
+    // Auto-update slug when name changes
+    if (body.name) {
+      const baseSlug = generateSlug(body.name);
+      let slug = baseSlug;
+      let suffix = 0;
+      while (true) {
+        const [existing] = await db.select({ id: productsTable.id })
+          .from(productsTable)
+          .where(eq(productsTable.slug, slug));
+        if (!existing || existing.id === id) break;
+        slug = `${baseSlug}-${++suffix}`;
+      }
+      updateData.slug = slug;
+    }
     const [product] = await db.update(productsTable).set(updateData).where(eq(productsTable.id, id)).returning();
     const [cat] = await db.select({ name: categoriesTable.name }).from(categoriesTable).where(eq(categoriesTable.id, product.categoryId));
     res.json(productWithCategory(product as unknown as Record<string, unknown>, cat?.name));

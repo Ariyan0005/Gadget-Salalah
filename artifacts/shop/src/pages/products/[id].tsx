@@ -1,16 +1,16 @@
 import { useRoute } from "wouter";
 import { AppLayout } from "@/components/layout/AppLayout";
 import {
-  useGetProduct,
   useAddToCart,
   useListProductVariants,
   getGetCartQueryKey,
-  getGetProductQueryKey,
   getListProductVariantsQueryKey,
 } from "@workspace/api-client-react";
+import type { Product } from "@workspace/api-client-react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { formatPrice } from "@/lib/format";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -20,23 +20,47 @@ import { cn } from "@/lib/utils";
 
 export default function ProductDetail() {
   const [, params] = useRoute("/products/:id");
-  const id = Number(params?.id);
+  const slug = params?.id ?? "";          // may be "samsung-s26-ultra" or "42"
 
-  const { data: product, isLoading } = useGetProduct(id, {
-    query: { enabled: !!id, queryKey: getGetProductQueryKey(id) },
+  // Fetch by slug (or numeric id) — backend accepts both
+  const { data: product, isLoading } = useQuery<Product>({
+    queryKey: [`/api/products/${slug}`],
+    queryFn: async ({ signal }) => {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/products/${encodeURIComponent(slug)}`, {
+        signal,
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error("Product not found");
+      return res.json();
+    },
+    enabled: !!slug,
   });
-  const { data: variants = [] } = useListProductVariants(id, {
-    query: { enabled: !!id, queryKey: getListProductVariantsQueryKey(id) },
+
+  // Once we have the product, load variants by numeric id
+  const productId = product?.id ?? 0;
+  const { data: variants = [] } = useListProductVariants(productId, {
+    query: {
+      enabled: !!productId,
+      queryKey: getListProductVariantsQueryKey(productId),
+    },
   });
 
   const [quantity, setQuantity] = useState(1);
-  // Track one selected variant ID per option group name
   const [selectedOptions, setSelectedOptions] = useState<Record<string, number>>({});
   const addToCartMutation = useAddToCart();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Group variants by option name (e.g. "Color" → [Black, White], "Storage" → [64GB, 128GB])
+  // SEO: set page title when product loads
+  useEffect(() => {
+    if (product?.name) {
+      document.title = `${product.name} — Buy Online | Gadget Salalah, Salalah Oman`;
+    }
+    return () => { document.title = "Gadget Salalah — Dhofar's #1 Tech Store"; };
+  }, [product?.name]);
+
+  // Group variants by option name
   const variantGroups = useMemo(() => {
     const map = new Map<string, typeof variants>();
     for (const v of variants) {
@@ -49,24 +73,21 @@ export default function ProductDetail() {
   const allGroupNames = useMemo(() => Array.from(variantGroups.keys()), [variantGroups]);
   const allGroupsSelected = allGroupNames.every((name) => selectedOptions[name] !== undefined);
 
-  // Collect all selected variant objects
   const selectedVariants = useMemo(() => {
     return Object.values(selectedOptions)
       .map((id) => variants.find((v) => v.id === id))
       .filter(Boolean) as typeof variants;
   }, [selectedOptions, variants]);
 
-  // Effective price = base price + sum of all selected variant price modifiers
   const effectivePrice = useMemo(() => {
     if (!product) return 0;
     const totalMod = selectedVariants.reduce((sum, v) => sum + Number(v.priceModifier), 0);
     return Number(product.price) + totalMod;
   }, [product, selectedVariants]);
 
-  // Effective stock: when variants exist, take minimum stock across selected variants
   const effectiveStock = useMemo(() => {
     if (variants.length === 0) return product?.stock ?? 0;
-    if (!allGroupsSelected) return null; // null = "not yet determinable"
+    if (!allGroupsSelected) return null;
     if (selectedVariants.length === 0) return 0;
     return Math.min(...selectedVariants.map((v) => v.stock));
   }, [product, variants, selectedVariants, allGroupsSelected]);
@@ -77,7 +98,6 @@ export default function ProductDetail() {
   const handleSelectOption = (groupName: string, variantId: number) => {
     setSelectedOptions((prev) => {
       if (prev[groupName] === variantId) {
-        // Deselect
         const next = { ...prev };
         delete next[groupName];
         return next;
@@ -194,7 +214,7 @@ export default function ProductDetail() {
               )}
             </div>
 
-            {/* Variant Selectors — one group per option name */}
+            {/* Variant Selectors */}
             {variantGroups.size > 0 && (
               <div className="mb-6 space-y-5">
                 {Array.from(variantGroups.entries()).map(([groupName, groupVariants]) => {
