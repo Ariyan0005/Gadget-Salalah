@@ -2,9 +2,9 @@ import { Link, useLocation } from "wouter";
 import { useAuth } from "@/context/AuthContext";
 import { useGetCart, useListCategories, getGetCartQueryKey } from "@workspace/api-client-react";
 import {
-  ShoppingCart, Menu, Search, User, LogOut, Package,
+  ShoppingCart, Menu, Search, User, LogOut,
   Home as HomeIcon, Navigation, ChevronRight, Grid3X3, Wrench,
-  Puzzle, Settings, PhoneCall, LayoutDashboard, UserCircle,
+  Puzzle, Settings, PhoneCall, LayoutDashboard, UserCircle, Package,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -190,59 +190,22 @@ export function Header() {
                       </>
                     ) : (
                       <>
-                        {/* User info */}
-                        <div className="px-2.5 py-2 mb-1 bg-muted/40 rounded-lg">
-                          <p className="text-sm font-semibold leading-tight">{user.name}</p>
-                          <p className="text-[11px] text-muted-foreground truncate">{user.email}</p>
-                        </div>
-
-                        {/* Admin Dashboard */}
-                        {user.role === "admin" && (
-                          <Link href="/admin" onClick={close}
-                            className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-bold text-accent hover:bg-accent/5 transition-colors">
-                            <LayoutDashboard className="h-4 w-4" /> Admin Dashboard
-                          </Link>
-                        )}
-
-                        {/* My Account */}
+                        {/* User info — tapping opens Account page */}
                         <Link href="/account" onClick={close}
-                          className={cn(
-                            "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors",
-                            location.startsWith("/account") ? "bg-accent/10 text-accent" : "hover:bg-muted text-foreground"
-                          )}>
-                          <UserCircle className="h-4 w-4" /> My Account
+                          className="flex items-center gap-3 px-2.5 py-2.5 mb-1 bg-muted/40 hover:bg-muted/70 rounded-lg transition-colors">
+                          <div className="h-8 w-8 rounded-full bg-accent/15 flex items-center justify-center shrink-0 text-accent font-black text-sm">
+                            {user.name?.charAt(0).toUpperCase() ?? "U"}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold leading-tight truncate">{user.name}</p>
+                            <p className="text-[11px] text-muted-foreground truncate">{user.email}</p>
+                          </div>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground/50 shrink-0" />
                         </Link>
 
-                        {/* My Orders */}
-                        <Link href="/orders" onClick={close}
-                          className={cn(
-                            "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors",
-                            location.startsWith("/orders") ? "bg-accent/10 text-accent" : "hover:bg-muted text-foreground"
-                          )}>
-                          <Package className="h-4 w-4" /> My Orders
-                        </Link>
-
-                        {/* Settings */}
-                        <Link href="/settings" onClick={close}
-                          className={cn(
-                            "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors",
-                            location.startsWith("/settings") ? "bg-accent/10 text-accent" : "hover:bg-muted text-foreground"
-                          )}>
-                          <Settings className="h-4 w-4" /> Settings
-                        </Link>
-
-                        {/* Contact — moved from Navigation */}
-                        <Link href="/contact" onClick={close}
-                          className={cn(
-                            "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors",
-                            location.startsWith("/contact") ? "bg-accent/10 text-accent" : "hover:bg-muted text-foreground"
-                          )}>
-                          <PhoneCall className="h-4 w-4" /> Contact Us
-                        </Link>
-
-                        {/* Sign Out */}
+                        {/* Sign Out only */}
                         <button onClick={() => { logout(); close(); }}
-                          className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium text-destructive hover:bg-destructive/5 transition-colors mt-1">
+                          className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium text-destructive hover:bg-destructive/5 transition-colors">
                           <LogOut className="h-4 w-4" /> Sign Out
                         </button>
                       </>

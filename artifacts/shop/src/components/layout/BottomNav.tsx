@@ -8,7 +8,7 @@ const ITEMS = [
   { href: "/products",       label: "Shop",           icon: Grid3X3 },
   { href: "/mobile-service", label: "Service",        icon: Wrench  },
   { href: "/orders",         label: "Orders",         icon: Package, authRequired: true },
-  { href: "/account",        label: "Account",        icon: User,    isAccount: true },
+  { href: "/account",        label: "Account",        icon: User,    isAccount: true, authHref: "/login" },
 ];
 
 export function BottomNav() {
