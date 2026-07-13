@@ -256,19 +256,15 @@ export function Header() {
           {/* Right icons */}
           <div className="flex items-center gap-1">
 
-            {/* Language switcher */}
+            {/* Language switcher — pill style */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative" aria-label="Language">
-                  <Globe className="h-5 w-5" />
-                  <span className="absolute -bottom-0.5 -right-0.5 text-[8px] font-black leading-none bg-accent text-white rounded px-0.5">
-                    {lang.toUpperCase()}
-                  </span>
-                </Button>
+                <button className="flex items-center gap-1.5 rounded-full border border-border bg-muted/60 hover:bg-muted px-3 py-1.5 text-sm font-medium text-foreground transition-colors select-none">
+                  {LANGUAGES.find(l => l.code === lang)?.nativeLabel}
+                  <ChevronRight className="h-3.5 w-3.5 rotate-90 text-muted-foreground" />
+                </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-40">
-                <DropdownMenuLabel className="text-xs text-muted-foreground">Language</DropdownMenuLabel>
-                <DropdownMenuSeparator />
                 {LANGUAGES.map(l => (
                   <DropdownMenuItem
                     key={l.code}
@@ -283,16 +279,16 @@ export function Header() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Cart — bigger icon */}
+            {/* Cart — bigger, accent coloured */}
             <Link href="/cart">
-              <Button variant="ghost" size="icon" className="relative h-10 w-10">
-                <ShoppingCart className="h-6 w-6" />
+              <button className="relative flex items-center justify-center h-10 w-10 rounded-full hover:bg-accent/10 transition-colors">
+                <ShoppingCart className="h-[26px] w-[26px] text-accent stroke-[1.8px]" />
                 {cartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-accent text-white text-[10px] font-bold flex items-center justify-center leading-none">
+                  <span className="absolute -top-0.5 -right-0.5 h-4 min-w-4 px-1 rounded-full bg-accent text-white text-[10px] font-bold flex items-center justify-center leading-none">
                     {cartCount > 9 ? "9+" : cartCount}
                   </span>
                 )}
-              </Button>
+              </button>
             </Link>
 
             {/* Desktop Account dropdown */}
