@@ -45,7 +45,7 @@ export function Header() {
       {/* Announcement Bar */}
       <div className="bg-[#1a2332] text-white text-center text-xs py-1.5 px-4 font-medium tracking-wide">
         <span className="text-accent font-semibold">⚡</span>
-        {" "}Free delivery on orders over 10 OMR · Gadget Salalah — Dhofar's #1 Tech Store{" "}
+        {" "}Free delivery on orders over 100 OMR · Gadget Salalah — Dhofar's #1 Tech Store{" "}
         <span className="text-accent font-semibold">⚡</span>
       </div>
 

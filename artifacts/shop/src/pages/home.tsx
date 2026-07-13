@@ -25,7 +25,7 @@ import useEmblaCarousel from "embla-carousel-react";
 import { useCallback, useEffect, useState } from "react";
 
 const TRUST_BADGES = [
-  { icon: Truck, label: "Free Delivery", sub: "Orders over 10 OMR" },
+  { icon: Truck, label: "Free Delivery", sub: "Orders over 100 OMR" },
   { icon: Shield, label: "Genuine Products", sub: "100% Authentic" },
   { icon: RefreshCw, label: "Easy Returns", sub: "7-day return policy" },
   { icon: Headphones, label: "Support", sub: "Sun–Thu, 9am–9pm" },

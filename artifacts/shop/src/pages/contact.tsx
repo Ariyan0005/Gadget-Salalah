@@ -39,7 +39,7 @@ export default function Contact() {
                 <div>
                   <h3 className="font-semibold text-lg mb-1">Our Store</h3>
                   <p className="text-muted-foreground text-sm leading-relaxed">
-                    Salalah Grand Mall, Al Nahdha St<br/>
+                    Central Salalah<br/>
                     Salalah, Dhofar<br/>
                     Sultanate of Oman
                   </p>
@@ -54,9 +54,23 @@ export default function Contact() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-lg mb-1">Phone</h3>
-                  <p className="text-muted-foreground text-sm">
-                    +968 2323 4567<br/>
-                    +968 9876 5432
+                  <p className="text-muted-foreground text-sm space-y-1">
+                    <a
+                      href="https://wa.me/96872142828"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 hover:text-green-600 transition-colors"
+                    >
+                      +968 7214 2828
+                    </a>
+                    <a
+                      href="https://wa.me/96893162391"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 hover:text-green-600 transition-colors"
+                    >
+                      +968 9316 2391
+                    </a>
                   </p>
                 </div>
               </CardContent>
@@ -70,8 +84,12 @@ export default function Contact() {
                 <div>
                   <h3 className="font-semibold text-lg mb-1">Email</h3>
                   <p className="text-muted-foreground text-sm">
-                    support@gadgetsalalah.com<br/>
-                    sales@gadgetsalalah.com
+                    <a
+                      href="mailto:gadgetsalalah247@gmail.com"
+                      className="hover:text-primary transition-colors"
+                    >
+                      gadgetsalalah247@gmail.com
+                    </a>
                   </p>
                 </div>
               </CardContent>
@@ -85,9 +103,7 @@ export default function Contact() {
                 <div>
                   <h3 className="font-semibold text-lg mb-1">Business Hours</h3>
                   <p className="text-muted-foreground text-sm">
-                    Sunday – Thursday: 9:00 AM – 9:00 PM<br/>
-                    Friday: 4:00 PM – 9:00 PM<br/>
-                    Saturday: 10:00 AM – 9:00 PM
+                    Friday – Thursday: 9:00 AM – 11:30 PM
                   </p>
                 </div>
               </CardContent>
