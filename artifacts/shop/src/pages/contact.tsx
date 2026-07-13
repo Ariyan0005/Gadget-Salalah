@@ -1,11 +1,17 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Mail, MapPin, Phone, Clock } from "lucide-react";
+import { FaWhatsapp } from "react-icons/fa";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+
+const PHONES = [
+  { display: "+968 7214 2828", wa: "96872142828", tel: "+96872142828" },
+  { display: "+968 9316 2391", wa: "96893162391", tel: "+96893162391" },
+];
 
 export default function Contact() {
   const { toast } = useToast();
@@ -31,6 +37,7 @@ export default function Contact() {
 
         <div className="grid lg:grid-cols-5 gap-12">
           <div className="lg:col-span-2 space-y-6">
+            {/* Store */}
             <Card>
               <CardContent className="p-6 flex items-start gap-4">
                 <div className="bg-primary/10 p-3 rounded-full text-primary shrink-0">
@@ -47,35 +54,48 @@ export default function Contact() {
               </CardContent>
             </Card>
 
+            {/* Phone */}
             <Card>
               <CardContent className="p-6 flex items-start gap-4">
                 <div className="bg-primary/10 p-3 rounded-full text-primary shrink-0">
                   <Phone className="h-6 w-6" />
                 </div>
-                <div>
-                  <h3 className="font-semibold text-lg mb-1">Phone</h3>
-                  <p className="text-muted-foreground text-sm space-y-1">
-                    <a
-                      href="https://wa.me/96872142828"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 hover:text-green-600 transition-colors"
-                    >
-                      +968 7214 2828
-                    </a>
-                    <a
-                      href="https://wa.me/96893162391"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 hover:text-green-600 transition-colors"
-                    >
-                      +968 9316 2391
-                    </a>
-                  </p>
+                <div className="w-full">
+                  <h3 className="font-semibold text-lg mb-3">Phone</h3>
+                  <div className="space-y-3">
+                    {PHONES.map(({ display, wa, tel }) => (
+                      <div key={wa} className="flex items-center justify-between gap-3">
+                        <span className="text-muted-foreground text-sm font-medium tracking-wide">
+                          {display}
+                        </span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {/* WhatsApp */}
+                          <a
+                            href={`https://wa.me/${wa}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="WhatsApp"
+                            className="flex items-center justify-center h-8 w-8 rounded-full bg-green-50 text-green-600 hover:bg-green-100 transition-colors"
+                          >
+                            <FaWhatsapp className="h-4 w-4" />
+                          </a>
+                          {/* Call */}
+                          <a
+                            href={`tel:${tel}`}
+                            title="Call"
+                            className="flex items-center justify-center h-8 w-8 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                          >
+                            <Phone className="h-4 w-4" />
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
+            {/* Email */}
             <Card>
               <CardContent className="p-6 flex items-start gap-4">
                 <div className="bg-primary/10 p-3 rounded-full text-primary shrink-0">
@@ -83,18 +103,17 @@ export default function Contact() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-lg mb-1">Email</h3>
-                  <p className="text-muted-foreground text-sm">
-                    <a
-                      href="mailto:gadgetsalalah247@gmail.com"
-                      className="hover:text-primary transition-colors"
-                    >
-                      gadgetsalalah247@gmail.com
-                    </a>
-                  </p>
+                  <a
+                    href="mailto:gadgetsalalah247@gmail.com"
+                    className="text-muted-foreground text-sm hover:text-primary transition-colors"
+                  >
+                    gadgetsalalah247@gmail.com
+                  </a>
                 </div>
               </CardContent>
             </Card>
 
+            {/* Business Hours */}
             <Card>
               <CardContent className="p-6 flex items-start gap-4">
                 <div className="bg-primary/10 p-3 rounded-full text-primary shrink-0">
