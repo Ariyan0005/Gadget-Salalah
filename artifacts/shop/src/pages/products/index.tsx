@@ -78,18 +78,18 @@ export default function Products() {
       </div>
 
       <div>
-        <h3 className="mb-4 text-sm font-medium">Price Range (BDT)</h3>
+        <h3 className="mb-4 text-sm font-medium">Price Range (OMR)</h3>
         <Slider
-          defaultValue={[0, 200000]}
-          max={200000}
-          step={1000}
+          defaultValue={[0, 2000]}
+          max={2000}
+          step={10}
           value={priceRange}
           onValueChange={setPriceRange}
           className="mb-4"
         />
         <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>{priceRange[0].toLocaleString()}</span>
-          <span>{priceRange[1].toLocaleString()}</span>
+          <span>OMR {priceRange[0].toLocaleString()}</span>
+          <span>OMR {priceRange[1].toLocaleString()}</span>
         </div>
       </div>
 

@@ -4,8 +4,9 @@ import { useGetCart, useListCategories, getGetCartQueryKey } from "@workspace/ap
 import {
   ShoppingCart, Menu, Search, User, LogOut,
   Home as HomeIcon, Navigation, ChevronRight, Grid3X3, Wrench,
-  Puzzle, Settings, PhoneCall, LayoutDashboard, UserCircle, Package,
+  Puzzle, Settings, PhoneCall, LayoutDashboard, UserCircle, Package, Globe,
 } from "lucide-react";
+import { useLang, LANGUAGES } from "@/context/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -44,6 +45,7 @@ export function Header() {
   const [annVisible, setAnnVisible] = useState(true);
 
   const cartCount = cart?.items?.reduce((s: number, i: { quantity: number }) => s + i.quantity, 0) ?? 0;
+  const { lang, setLang } = useLang();
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -253,9 +255,38 @@ export function Header() {
 
           {/* Right icons */}
           <div className="flex items-center gap-1">
+
+            {/* Language switcher */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="relative" aria-label="Language">
+                  <Globe className="h-5 w-5" />
+                  <span className="absolute -bottom-0.5 -right-0.5 text-[8px] font-black leading-none bg-accent text-white rounded px-0.5">
+                    {lang.toUpperCase()}
+                  </span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40">
+                <DropdownMenuLabel className="text-xs text-muted-foreground">Language</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {LANGUAGES.map(l => (
+                  <DropdownMenuItem
+                    key={l.code}
+                    onClick={() => setLang(l.code)}
+                    className={lang === l.code ? "bg-accent/10 text-accent font-semibold" : ""}
+                  >
+                    <span className="mr-2">{l.code === "ar" ? "🇴🇲" : l.code === "en" ? "🇬🇧" : l.code === "hi" ? "🇮🇳" : "🇧🇩"}</span>
+                    {l.nativeLabel}
+                    {lang === l.code && <span className="ml-auto text-accent">✓</span>}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Cart — bigger icon */}
             <Link href="/cart">
-              <Button variant="ghost" size="icon" className="relative">
-                <ShoppingCart className="h-5 w-5" />
+              <Button variant="ghost" size="icon" className="relative h-10 w-10">
+                <ShoppingCart className="h-6 w-6" />
                 {cartCount > 0 && (
                   <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-accent text-white text-[10px] font-bold flex items-center justify-center leading-none">
                     {cartCount > 9 ? "9+" : cartCount}
