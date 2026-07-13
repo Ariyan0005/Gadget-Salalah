@@ -3,7 +3,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useGetCart, useListCategories, getGetCartQueryKey } from "@workspace/api-client-react";
 import {
   ShoppingCart, Menu, Search, User, LogOut, Package,
-  Home as HomeIcon, PhoneCall, Navigation, ChevronRight, Grid3X3
+  Home as HomeIcon, PhoneCall, Navigation, ChevronRight, Grid3X3, Wrench
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,14 +12,20 @@ import {
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 
 const NAV_LINKS = [
   { href: "/", label: "Home", icon: HomeIcon, exact: true },
   { href: "/products", label: "Products", icon: Grid3X3 },
+  { href: "/mobile-service", label: "Mobile Service", icon: Wrench },
   { href: "/track", label: "Track Order", icon: Navigation },
   { href: "/contact", label: "Contact", icon: PhoneCall },
+];
+
+const ANNOUNCEMENTS = [
+  "⚡ Free delivery on orders over 100 OMR · Gadget Salalah — Dhofar's #1 Tech Store ⚡",
+  "🔧 Mobile Repair in Salalah · Screen, Battery & More · Same Day Service Available 🔧",
 ];
 
 export function Header() {
@@ -29,8 +35,21 @@ export function Header() {
   const { data: categories } = useListCategories();
   const [searchQuery, setSearchQuery] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [annIdx, setAnnIdx] = useState(0);
+  const [annVisible, setAnnVisible] = useState(true);
 
   const cartCount = cart?.items?.reduce((s: number, i: { quantity: number }) => s + i.quantity, 0) ?? 0;
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setAnnVisible(false);
+      setTimeout(() => {
+        setAnnIdx(i => (i + 1) % ANNOUNCEMENTS.length);
+        setAnnVisible(true);
+      }, 400);
+    }, 4500);
+    return () => clearInterval(timer);
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,11 +61,18 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full">
-      {/* Announcement Bar */}
-      <div className="bg-[#1a2332] text-white text-center text-xs py-1.5 px-4 font-medium tracking-wide">
-        <span className="text-accent font-semibold">⚡</span>
-        {" "}Free delivery on orders over 100 OMR · Gadget Salalah — Dhofar's #1 Tech Store{" "}
-        <span className="text-accent font-semibold">⚡</span>
+      {/* Announcement Bar — sliding */}
+      <div className="bg-[#1a2332] text-white text-center text-xs py-1.5 px-4 font-medium tracking-wide overflow-hidden">
+        <span
+          style={{
+            display: "inline-block",
+            transition: "opacity 0.4s ease, transform 0.4s ease",
+            opacity: annVisible ? 1 : 0,
+            transform: annVisible ? "translateY(0)" : "translateY(-8px)",
+          }}
+        >
+          {ANNOUNCEMENTS[annIdx]}
+        </span>
       </div>
 
       {/* Main Header */}

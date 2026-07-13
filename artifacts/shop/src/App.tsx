@@ -19,6 +19,8 @@ import TrackOrder from "./pages/track";
 import AuthPage from "./pages/auth";
 import About from "./pages/about";
 import Contact from "./pages/contact";
+import MobileService from "./pages/mobile-service";
+import SpareParts from "./pages/spare-parts";
 
 // Admin
 import AdminDashboard from "./pages/admin/index";
@@ -58,6 +60,8 @@ function Router() {
       <Route path="/track" component={TrackOrder} />
       <Route path="/about" component={About} />
       <Route path="/contact" component={Contact} />
+      <Route path="/mobile-service" component={MobileService} />
+      <Route path="/spare-parts" component={SpareParts} />
       
       <Route path="/login"><AuthPage isLogin={true} /></Route>
       <Route path="/register"><AuthPage isLogin={false} /></Route>
