@@ -197,9 +197,9 @@ export function Header() {
                           <ChevronRight className="h-4 w-4 text-muted-foreground/50 shrink-0" />
                         </Link>
 
-                        {/* Sign Out only */}
+                        {/* Sign Out — distinct red button, pushed lower */}
                         <button onClick={() => { logout(); close(); }}
-                          className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium text-destructive hover:bg-destructive/5 transition-colors">
+                          className="flex w-full items-center justify-center gap-2.5 rounded-xl px-2.5 py-2.5 mt-3 text-sm font-semibold bg-red-500 text-white hover:bg-red-600 active:bg-red-700 transition-colors shadow-sm">
                           <LogOut className="h-4 w-4" /> Sign Out
                         </button>
                       </>
