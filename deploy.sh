@@ -10,6 +10,11 @@ REPO_DIR="/var/www/gadgetsalalah"
 FRONTEND_DIST="$REPO_DIR/artifacts/shop/dist/public"
 NGINX_ROOT="/var/www/html/gadgetsalalah"   # nginx static root — adjust if different
 API_PM2_NAME="gadgetsalalah-api"
+API_PORT="${API_PORT:-8080}"
+
+# The API requires PORT at startup. Export it for new and restarted PM2 processes.
+export PORT="$API_PORT"
+export NODE_ENV="production"
 
 cd "$REPO_DIR"
 
@@ -45,7 +50,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 # Restart API server with PM2
 if pm2 list | grep -q "$API_PM2_NAME"; then
   echo "→ Restarting PM2 process: $API_PM2_NAME"
-  pm2 restart "$API_PM2_NAME"
+  pm2 restart "$API_PM2_NAME" --update-env
 else
   echo "→ Starting new PM2 process: $API_PM2_NAME"
   pm2 start "$REPO_DIR/artifacts/api-server/dist/index.mjs" \
@@ -66,6 +71,6 @@ fi
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  🎉 Deploy complete!"
-echo "  API  → PM2 process: $API_PM2_NAME"
+echo "  API  → PM2 process: $API_PM2_NAME (port $API_PORT)"
 echo "  Web  → $NGINX_ROOT"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
