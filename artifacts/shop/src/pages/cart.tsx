@@ -5,15 +5,24 @@ import { Button } from "@/components/ui/button";
 import { formatPrice } from "@/lib/format";
 import { Trash2, Minus, Plus, ShoppingBag } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/context/AuthContext";
+import { removeGuestCartItem, updateGuestCartItem, useGuestCart } from "@/lib/guest-cart";
 
 export default function Cart() {
-  const { data: cart, isLoading } = useGetCart();
+  const { user } = useAuth();
+  const { data: userCart, isLoading } = useGetCart({ query: { enabled: !!user, queryKey: getGetCartQueryKey() } });
+  const guestCart = useGuestCart();
+  const cart = user ? userCart : guestCart;
   const updateItemMutation = useUpdateCartItem();
   const removeItemMutation = useRemoveCartItem();
   const queryClient = useQueryClient();
 
   const handleUpdateQuantity = (itemId: number, newQuantity: number) => {
     if (newQuantity < 1) return;
+    if (!user) {
+      updateGuestCartItem(itemId, newQuantity);
+      return;
+    }
     updateItemMutation.mutate({
       itemId,
       data: { quantity: newQuantity }
@@ -23,12 +32,16 @@ export default function Cart() {
   };
 
   const handleRemoveItem = (itemId: number) => {
+    if (!user) {
+      removeGuestCartItem(itemId);
+      return;
+    }
     removeItemMutation.mutate({ itemId }, {
       onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetCartQueryKey() })
     });
   };
 
-  if (isLoading) {
+  if (user && isLoading) {
     return <AppLayout><div className="p-12 text-center">Loading cart...</div></AppLayout>;
   }
 
