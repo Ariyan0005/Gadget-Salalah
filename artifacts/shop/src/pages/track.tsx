@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useTrackOrder, getTrackOrderQueryKey } from "@workspace/api-client-react";
 import { Input } from "@/components/ui/input";
@@ -8,8 +8,11 @@ import { formatPrice } from "@/lib/format";
 import { Search, Package, CheckCircle, Truck, Clock } from "lucide-react";
 
 export default function TrackOrder() {
-  const [searchId, setSearchId] = useState("");
-  const [trackingId, setTrackingId] = useState("");
+  const initialTrackingId = typeof window !== "undefined"
+    ? new URLSearchParams(window.location.search).get("trackingId") || ""
+    : "";
+  const [searchId, setSearchId] = useState(initialTrackingId);
+  const [trackingId, setTrackingId] = useState(initialTrackingId);
 
   const { data: order, isLoading, isError, error } = useTrackOrder(trackingId, {
     query: { queryKey: getTrackOrderQueryKey(trackingId), enabled: !!trackingId, retry: false }
