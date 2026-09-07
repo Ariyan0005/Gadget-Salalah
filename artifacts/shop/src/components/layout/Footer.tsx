@@ -73,6 +73,7 @@ export function Footer() {
               <li><Link href="/track"    className="hover:text-white transition-colors">Track Order</Link></li>
               <li><Link href="/products" className="hover:text-white transition-colors">All Products</Link></li>
               <li><Link href="/mobile-service" className="hover:text-white transition-colors">Mobile Service</Link></li>
+               <li><Link href="/return-policy" className="hover:text-white transition-colors">Return Policy</Link></li>
               {!user && (
                 <li><Link href="/login" className="hover:text-white transition-colors">Sign In</Link></li>
               )}
