@@ -8,6 +8,7 @@ import {
   getGetCartQueryKey,
   getListOrdersQueryKey,
 } from "@workspace/api-client-react";
+import type { Order } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ import {
   MapPin,
   ChevronDown,
 } from "lucide-react";
+import { clearGuestCart, useGuestCart } from "@/lib/guest-cart";
 
 function formatOmr(amount: number) {
   return `OMR ${amount.toFixed(3)}`;
@@ -33,7 +35,11 @@ function formatOmr(amount: number) {
 export default function Checkout() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
-  const { data: cart, isLoading: isCartLoading } = useGetCart();
+  const { data: userCart, isLoading: isCartLoading } = useGetCart({
+    query: { enabled: !!user, queryKey: getGetCartQueryKey() },
+  });
+  const guestCart = useGuestCart();
+  const cart = user ? userCart : guestCart;
   const { data: deliveryAreas = [] } = useListDeliveryAreas();
   const createOrderMutation = useCreateOrder();
   const queryClient = useQueryClient();
@@ -41,10 +47,13 @@ export default function Checkout() {
 
   const [address, setAddress] = useState(user?.address || "");
   const [phone, setPhone] = useState(user?.phone || "");
+  const [name, setName] = useState(user?.name || "");
+  const [email, setEmail] = useState(user?.email || "");
   const [notes, setNotes] = useState("");
   const [selectedWilayat, setSelectedWilayat] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"cod" | "online">("cod");
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isGuestSubmitting, setIsGuestSubmitting] = useState(false);
   const [placedOrder, setPlacedOrder] = useState<{
     id: number;
     trackingId: string;
@@ -57,7 +66,29 @@ export default function Checkout() {
   const deliveryCharge = selectedArea?.deliveryChargeOmr ?? 0;
   const productTotal = cart?.total ?? 0;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (user) {
+      setName(user.name || "");
+      setEmail(user.email || "");
+      setAddress(user.address || "");
+      setPhone(user.phone || "");
+    }
+  }, [user]);
+
+  const handleSuccessfulOrder = (order: Order) => {
+    setIsSuccess(true);
+    setPlacedOrder({
+      id: order.id,
+      trackingId: order.trackingId ?? "",
+      deliveryCharge: order.deliveryCharge ?? deliveryCharge,
+      paymentMethod: order.paymentMethod ?? paymentMethod,
+      deliveryArea: order.deliveryArea ?? selectedWilayat,
+    });
+    queryClient.invalidateQueries({ queryKey: getGetCartQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getListOrdersQueryKey() });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!cart || cart.items.length === 0) return;
     if (!selectedWilayat) {
@@ -65,38 +96,65 @@ export default function Checkout() {
       return;
     }
 
-    createOrderMutation.mutate(
-      {
-        data: {
-          shippingAddress: address,
-          phone,
-          deliveryArea: selectedWilayat,
-          paymentMethod,
-          notes: notes || undefined,
+    if (!user && (!name.trim() || !email.trim())) {
+      toast({
+        title: "Contact details required",
+        description: "Please enter your name and email to place the order.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const orderInput = {
+      shippingAddress: address,
+      phone,
+      deliveryArea: selectedWilayat,
+      paymentMethod,
+      notes: notes || undefined,
+    };
+
+    if (user) {
+      createOrderMutation.mutate(
+        { data: orderInput },
+        {
+          onSuccess: handleSuccessfulOrder,
+          onError: (err: any) => {
+            toast({
+              title: "Order Failed",
+              description: err.data?.error || err.message || "Failed to place order. Please try again.",
+              variant: "destructive",
+            });
+          },
         },
-      },
-      {
-        onSuccess: (order) => {
-          setIsSuccess(true);
-          setPlacedOrder({
-            id: order.id,
-            trackingId: order.trackingId ?? "",
-            deliveryCharge: order.deliveryCharge ?? deliveryCharge,
-            paymentMethod: order.paymentMethod ?? paymentMethod,
-            deliveryArea: order.deliveryArea ?? selectedWilayat,
-          });
-          queryClient.invalidateQueries({ queryKey: getGetCartQueryKey() });
-          queryClient.invalidateQueries({ queryKey: getListOrdersQueryKey() });
-        },
-        onError: (err: any) => {
-          toast({
-            title: "Order Failed",
-            description: err.data?.error || err.message || "Failed to place order. Please try again.",
-            variant: "destructive",
-          });
-        },
-      }
-    );
+      );
+      return;
+    }
+
+    setIsGuestSubmitting(true);
+    try {
+      const response = await fetch("/api/orders/guest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...orderInput,
+          name: name.trim(),
+          email: email.trim(),
+          items: cart.items.map((item) => ({ productId: item.productId, quantity: item.quantity })),
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Failed to place order. Please try again.");
+      clearGuestCart();
+      handleSuccessfulOrder(data as Order);
+    } catch (error) {
+      toast({
+        title: "Order Failed",
+        description: error instanceof Error ? error.message : "Failed to place order. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGuestSubmitting(false);
+    }
   };
 
   // --- Success Screen ---
@@ -152,8 +210,10 @@ export default function Checkout() {
             )}
 
             <div className="pt-2 flex flex-col gap-3">
-              <Button asChild className="w-full">
-                <Link href={`/orders/${placedOrder.id}`}>View Order Status</Link>
+               <Button asChild className="w-full">
+                 <Link href={user ? `/orders/${placedOrder.id}` : `/track?trackingId=${encodeURIComponent(placedOrder.trackingId)}`}>
+                   View Order Status
+                 </Link>
               </Button>
               <Button asChild variant="outline" className="w-full">
                 <Link href="/">Continue Shopping</Link>
@@ -165,7 +225,7 @@ export default function Checkout() {
     );
   }
 
-  if (isCartLoading)
+  if (user && isCartLoading)
     return <AppLayout><div className="p-12 text-center">Loading...</div></AppLayout>;
 
   if (!cart || cart.items.length === 0) {
@@ -197,6 +257,34 @@ export default function Checkout() {
               <p className="text-sm text-muted-foreground -mt-2">
                 Delivery available only within <span className="font-medium text-foreground">Dhofar Governorate, Oman</span>.
               </p>
+
+              {!user && (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="guest-name">Full Name</Label>
+                    <Input
+                      id="guest-name"
+                      required
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Your full name"
+                      data-testid="input-guest-name"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="guest-email">Email Address</Label>
+                    <Input
+                      id="guest-email"
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      data-testid="input-guest-email"
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="wilayat">Select Your Wilayat</Label>
@@ -444,10 +532,10 @@ export default function Checkout() {
                 form="checkout-form"
                 size="lg"
                 className="w-full mt-4 h-12 text-base font-bold shadow-md"
-                disabled={createOrderMutation.isPending || !selectedWilayat}
+                 disabled={createOrderMutation.isPending || isGuestSubmitting || !selectedWilayat}
                 data-testid="btn-place-order"
               >
-                {createOrderMutation.isPending
+                 {createOrderMutation.isPending || isGuestSubmitting
                   ? "Processing..."
                   : paymentMethod === "cod"
                   ? "Place Order (COD)"
