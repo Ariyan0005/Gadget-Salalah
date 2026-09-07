@@ -16,6 +16,7 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { useGuestCart } from "@/lib/guest-cart";
 
 // Desktop nav — no Contact (moved to Account)
 const NAV_LINKS = [
@@ -37,13 +38,15 @@ const ANNOUNCEMENTS = [
 export function Header() {
   const { user, logout } = useAuth();
   const [location, setLocation] = useLocation();
-  const { data: cart } = useGetCart({ query: { enabled: !!user, queryKey: getGetCartQueryKey() } });
+  const { data: userCart } = useGetCart({ query: { enabled: !!user, queryKey: getGetCartQueryKey() } });
+  const guestCart = useGuestCart();
   const { data: categories } = useListCategories();
   const [searchQuery, setSearchQuery] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [annIdx, setAnnIdx] = useState(0);
   const [annVisible, setAnnVisible] = useState(true);
 
+  const cart = user ? userCart : guestCart;
   const cartCount = cart?.items?.reduce((s: number, i: { quantity: number }) => s + i.quantity, 0) ?? 0;
   const { lang, setLang } = useLang();
 
