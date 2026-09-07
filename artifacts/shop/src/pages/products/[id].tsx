@@ -18,6 +18,8 @@ import { Minus, Plus, ShoppingCart, ShieldCheck, Truck, RefreshCcw, ChevronRight
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
 import { setSeo, SITE_URL } from "@/lib/seo";
+import { useAuth } from "@/context/AuthContext";
+import { addGuestProduct } from "@/lib/guest-cart";
 
 export default function ProductDetail() {
   const [, params] = useRoute("/products/:id");
@@ -53,6 +55,7 @@ export default function ProductDetail() {
   const addToCartMutation = useAddToCart();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   // Product-specific SEO and structured data.
   useEffect(() => {
@@ -189,6 +192,16 @@ export default function ProductDetail() {
       });
       return;
     }
+    if (!user) {
+      addGuestProduct(product, quantity);
+      const variantLabel = selectedVariants.map((v) => v.value).join(", ");
+      toast({
+        title: "Added to cart",
+        description: `${quantity}× ${product.name}${variantLabel ? ` (${variantLabel})` : ""} added.`,
+      });
+      return;
+    }
+
     addToCartMutation.mutate(
       { data: { productId: product.id, quantity } },
       {
