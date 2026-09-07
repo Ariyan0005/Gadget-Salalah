@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 const ITEMS = [
   { href: "/",               label: "Home",           icon: Home,    exact: true },
-  { href: "/orders",         label: "Orders",         icon: Package, authRequired: true },
+  { href: "/orders",         label: "Orders",         icon: Package, authRequired: true, guestHref: "/track" },
   { href: "/products",       label: "Shop",           icon: ShoppingBag },
   { href: "/mobile-service", label: "Service",        icon: Wrench  },
   { href: "/account",        label: "Account",        icon: User,    isAccount: true, authHref: "/login" },
@@ -18,16 +18,16 @@ export function BottomNav() {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white/95 backdrop-blur-md border-t border-border/60 shadow-[0_-2px_16px_rgba(0,0,0,0.07)]">
       <div className="flex items-stretch h-[60px] px-1">
-        {ITEMS.map(({ href, label, icon: Icon, exact, isAccount, authRequired }) => {
+        {ITEMS.map(({ href, label, icon: Icon, exact, isAccount, authRequired, guestHref }) => {
           const finalHref = isAccount
             ? (user ? "/account" : "/login")
             : authRequired && !user
-            ? "/login"
+            ? guestHref ?? "/login"
             : href;
 
           const isActive = exact
             ? location === finalHref || location === href
-            : location.startsWith(href);
+            : location.startsWith(href) || (!user && !!guestHref && location.startsWith(guestHref));
 
           return (
             <Link
