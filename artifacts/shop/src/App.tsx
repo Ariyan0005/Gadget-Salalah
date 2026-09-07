@@ -38,7 +38,17 @@ import AdminSetup from "./pages/admin/setup";
 
 setAuthTokenGetter(() => localStorage.getItem("token"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Avoid making a broken API proxy feel like a long page load.
+      retry: 1,
+      retryDelay: (attempt) => Math.min(500 * 2 ** attempt, 2000),
+      staleTime: 30_000,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 // Route Guards
 function PrivateRoute({ component: Component, ...rest }: any) {
