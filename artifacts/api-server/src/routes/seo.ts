@@ -23,7 +23,7 @@ router.get("/sitemap.xml", async (_req, res) => {
       .from(productsTable)
       .where(eq(productsTable.isActive, true));
 
-    const publicRoutes = ["/", "/products", "/categories", "/about", "/contact", "/mobile-service", "/spare-parts", "/track"];
+    const publicRoutes = ["/", "/products", "/categories", "/about", "/contact", "/mobile-service", "/spare-parts", "/track", "/return-policy"];
     const urls = [
       ...publicRoutes.map((path) => `<url><loc>${SITE_URL}${path}</loc><changefreq>weekly</changefreq></url>`),
       ...products.map((product) => {
