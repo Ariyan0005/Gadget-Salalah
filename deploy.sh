@@ -10,11 +10,10 @@ REPO_DIR="/var/www/gadgetsalalah"
 FRONTEND_DIST="$REPO_DIR/artifacts/shop/dist/public"
 NGINX_ROOT="/var/www/html/gadgetsalalah"   # nginx static root — adjust if different
 API_PM2_NAME="gadgetsalalah-api"
-API_PORT="${API_PORT:-8080}"
 
-# The API requires PORT at startup. Export it for new and restarted PM2 processes.
-export PORT="$API_PORT"
-export NODE_ENV="production"
+# Keep the VPS/PM2 environment as the source of truth for PORT, DATABASE_URL,
+# and all other production settings. This script must not replace them.
+export NODE_ENV="${NODE_ENV:-production}"
 
 cd "$REPO_DIR"
 
@@ -50,8 +49,12 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 # Restart API server with PM2
 if pm2 list | grep -q "$API_PM2_NAME"; then
   echo "→ Restarting PM2 process: $API_PM2_NAME"
-  pm2 restart "$API_PM2_NAME" --update-env
+  pm2 restart "$API_PM2_NAME"
 else
+  if [ -z "${PORT:-}" ]; then
+    echo "ERROR: PORT is not set for the first PM2 start; refusing to guess a port."
+    exit 1
+  fi
   echo "→ Starting new PM2 process: $API_PM2_NAME"
   pm2 start "$REPO_DIR/artifacts/api-server/dist/index.mjs" \
     --name "$API_PM2_NAME" \
@@ -71,6 +74,6 @@ fi
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  🎉 Deploy complete!"
-echo "  API  → PM2 process: $API_PM2_NAME (port $API_PORT)"
+echo "  API  → PM2 process: $API_PM2_NAME (using the existing PM2 environment)"
 echo "  Web  → $NGINX_ROOT"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
