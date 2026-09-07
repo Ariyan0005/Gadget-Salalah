@@ -141,6 +141,100 @@ router.post("/orders", authenticate, async (req: AuthRequest, res) => {
   }
 });
 
+// Guest checkout: the cart stays in the browser, while the completed order is
+// stored normally so the admin panel and public tracking continue to work.
+router.post("/orders/guest", async (req, res) => {
+  try {
+    const raw = req.body as Record<string, unknown>;
+    const parsed = CreateOrderBody.safeParse({
+      shippingAddress: raw.shippingAddress,
+      phone: raw.phone,
+      deliveryArea: raw.deliveryArea,
+      paymentMethod: raw.paymentMethod,
+      notes: raw.notes,
+    });
+    const name = typeof raw.name === "string" ? raw.name.trim() : "";
+    const email = typeof raw.email === "string" ? raw.email.trim() : "";
+    const rawItems = Array.isArray(raw.items) ? raw.items : [];
+    const items = rawItems.map((item) => {
+      const value = item as Record<string, unknown>;
+      return {
+        productId: Number(value.productId),
+        quantity: Number(value.quantity),
+      };
+    });
+
+    if (!parsed.success || name.length < 2 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
+        items.length === 0 || items.some((item) => !Number.isInteger(item.productId) || item.productId <= 0 ||
+          !Number.isInteger(item.quantity) || item.quantity <= 0)) {
+      res.status(400).json({ error: "Please provide valid contact, delivery, and cart details." });
+      return;
+    }
+
+    const body = parsed.data;
+    const area = findDeliveryArea(body.deliveryArea);
+    if (!area) {
+      res.status(400).json({ error: "Invalid delivery area. Only Dhofar Governorate wilayats are accepted." });
+      return;
+    }
+
+    let subtotal = 0;
+    const orderItemsData = await Promise.all(items.map(async (item) => {
+      const [product] = await db.select().from(productsTable).where(eq(productsTable.id, item.productId));
+      if (!product) throw new Error(`Product ${item.productId} not found`);
+      const price = Number(product.price);
+      subtotal += price * item.quantity;
+      return {
+        productId: item.productId,
+        productName: product.name,
+        productImage: product.imageUrl ?? null,
+        quantity: item.quantity,
+        price: String(price),
+      };
+    }));
+
+    const deliveryChargeOmr = area.deliveryChargeOmr;
+    const total = body.paymentMethod === "online" ? subtotal + deliveryChargeOmr : subtotal;
+    const trackingId = generateTrackingId();
+    const guestEmail = `guest-${Date.now()}-${crypto.randomBytes(6).toString("hex")}@guest.gadgetsalalah.local`;
+    const [guestUser] = await db.insert(usersTable).values({
+      name,
+      email: guestEmail,
+      password: crypto.randomBytes(32).toString("hex"),
+      role: "user",
+    }).returning();
+
+    const customerNotes = [`Guest checkout email: ${email}`, body.notes].filter(Boolean).join("\n");
+    const [order] = await db.insert(ordersTable).values({
+      userId: guestUser.id,
+      trackingId,
+      status: "pending",
+      total: String(total),
+      deliveryCharge: String(deliveryChargeOmr),
+      paymentMethod: body.paymentMethod,
+      deliveryArea: area.wilayat,
+      codDeliveryChargePaid: false,
+      shippingAddress: body.shippingAddress,
+      phone: body.phone,
+      notes: customerNotes,
+    }).returning();
+
+    await Promise.all(orderItemsData.map((item) =>
+      db.insert(orderItemsTable).values({ ...item, orderId: order.id }),
+    ));
+    await Promise.all(items.map((item) =>
+      db.update(productsTable).set({ soldCount: sql`${productsTable.soldCount} + ${item.quantity}` })
+        .where(eq(productsTable.id, item.productId)),
+    ));
+
+    const enriched = await enrichOrder(order);
+    res.status(201).json(enriched);
+  } catch (err) {
+    req.log.error(err);
+    res.status(400).json({ error: "Order creation failed. Please check your cart and try again." });
+  }
+});
+
 router.get("/orders/track/:trackingId", optionalAuth, async (req: AuthRequest, res) => {
   try {
     const tid = req.params.trackingId as string;
