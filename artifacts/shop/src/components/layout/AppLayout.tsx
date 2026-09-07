@@ -1,6 +1,7 @@
 import { Header } from "./Header";
 import { Footer } from "./Footer";
 import { BottomNav } from "./BottomNav";
+import { WhatsAppFloat } from "./WhatsAppFloat";
 import { ReactNode } from "react";
 
 export function AppLayout({ children }: { children: ReactNode }) {
@@ -12,6 +13,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
       </main>
       <Footer />
       <BottomNav />
+      <WhatsAppFloat />
     </div>
   );
 }
