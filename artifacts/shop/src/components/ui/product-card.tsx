@@ -7,15 +7,24 @@ import { useAddToCart, getGetCartQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { ShoppingCart, Star } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { addGuestProduct } from "@/lib/guest-cart";
 
 export function ProductCard({ product }: { product: Product }) {
   const addToCartMutation = useAddToCart();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+
+    if (!user) {
+      addGuestProduct(product);
+      toast({ title: "✅ Added to cart", description: product.name });
+      return;
+    }
 
     addToCartMutation.mutate(
       { data: { productId: product.id, quantity: 1 } },
@@ -77,7 +86,7 @@ export function ProductCard({ product }: { product: Product }) {
             <Button
               className="w-full rounded-none rounded-b-none h-10 text-xs font-semibold bg-primary hover:bg-primary/90 gap-2"
               onClick={handleAddToCart}
-              disabled={addToCartMutation.isPending}
+               disabled={user ? addToCartMutation.isPending : false}
               data-testid={`btn-add-to-cart-${product.id}`}
             >
               <ShoppingCart className="h-3.5 w-3.5" />
