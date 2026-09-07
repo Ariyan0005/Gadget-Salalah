@@ -58,7 +58,8 @@ function Router() {
   const [location] = useLocation();
   const path = location.split("?")[0];
   const hasQuery = typeof window !== "undefined" && Boolean(window.location.search);
-  const isPrivate = /^\/(account|settings|cart|checkout|orders|admin)(\/|$)/.test(path);
+  const isPrivate = /^\/(account|settings|orders|admin)(\/|$)/.test(path);
+  const isNoindexUtility = /^\/(cart|checkout)(\/|$)/.test(path);
   const isAuth = path === "/login" || path === "/register";
   const isKnownPublic = ["/", "/products", "/categories", "/track", "/about", "/contact", "/mobile-service", "/spare-parts"].includes(path);
 
@@ -80,12 +81,12 @@ function Router() {
                     ? "Mobile Spare Parts in Salalah | Gadget Salalah"
                     : path === "/track"
                       ? "Track Your Order | Gadget Salalah"
-                      : isPrivate || isAuth
+                         : isPrivate || isNoindexUtility || isAuth
                         ? "Gadget Salalah Account"
                         : DEFAULT_TITLE,
     description: DEFAULT_DESCRIPTION,
     path: isKnownPublic ? path : "/",
-    noindex: isPrivate || isAuth || (path === "/products" && hasQuery) || !isKnownPublic,
+     noindex: isPrivate || isNoindexUtility || isAuth || (path === "/products" && hasQuery) || !isKnownPublic,
   });
 
   return (
@@ -105,8 +106,8 @@ function Router() {
 
       <Route path="/account"><PrivateRoute component={AccountPage} /></Route>
       <Route path="/settings"><PrivateRoute component={SettingsPage} /></Route>
-      <Route path="/cart"><PrivateRoute component={Cart} /></Route>
-      <Route path="/checkout"><PrivateRoute component={Checkout} /></Route>
+      <Route path="/cart" component={Cart} />
+      <Route path="/checkout" component={Checkout} />
       <Route path="/orders"><PrivateRoute component={OrdersList} /></Route>
       <Route path="/orders/:id"><PrivateRoute component={OrderDetail} /></Route>
 
