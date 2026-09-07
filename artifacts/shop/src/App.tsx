@@ -1,4 +1,4 @@
-import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
+import { Switch, Route, Router as WouterRouter, Redirect, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,6 +6,7 @@ import NotFound from "@/pages/not-found";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { LanguageProvider } from "./context/LanguageContext";
 import { setAuthTokenGetter } from "@workspace/api-client-react";
+import { DEFAULT_DESCRIPTION, DEFAULT_TITLE, useSeo } from "./lib/seo";
 
 // Pages
 import Home from "./pages/home";
@@ -54,6 +55,39 @@ function AdminRoute({ component: Component, ...rest }: any) {
 }
 
 function Router() {
+  const [location] = useLocation();
+  const path = location.split("?")[0];
+  const hasQuery = typeof window !== "undefined" && Boolean(window.location.search);
+  const isPrivate = /^\/(account|settings|cart|checkout|orders|admin)(\/|$)/.test(path);
+  const isAuth = path === "/login" || path === "/register";
+  const isKnownPublic = ["/", "/products", "/categories", "/track", "/about", "/contact", "/mobile-service", "/spare-parts"].includes(path);
+
+  useSeo({
+    title:
+      path === "/"
+        ? "Gadget Salalah — Smartphones, Laptops & Accessories in Oman"
+        : path === "/products"
+          ? "Shop Gadgets in Salalah | Smartphones, Laptops & Accessories"
+          : path === "/categories"
+            ? "Gadget Categories in Salalah | Gadget Salalah"
+            : path === "/about"
+              ? "About Gadget Salalah | Dhofar's Tech Store"
+              : path === "/contact"
+                ? "Contact Gadget Salalah | Salalah, Oman"
+                : path === "/mobile-service"
+                  ? "Mobile Repair & Service in Salalah | Gadget Salalah"
+                  : path === "/spare-parts"
+                    ? "Mobile Spare Parts in Salalah | Gadget Salalah"
+                    : path === "/track"
+                      ? "Track Your Order | Gadget Salalah"
+                      : isPrivate || isAuth
+                        ? "Gadget Salalah Account"
+                        : DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+    path: isKnownPublic ? path : "/",
+    noindex: isPrivate || isAuth || (path === "/products" && hasQuery) || !isKnownPublic,
+  });
+
   return (
     <Switch>
       <Route path="/" component={Home} />

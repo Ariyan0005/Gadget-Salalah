@@ -17,13 +17,14 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Minus, Plus, ShoppingCart, ShieldCheck, Truck, RefreshCcw, ChevronRight } from "lucide-react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
+import { setSeo, SITE_URL } from "@/lib/seo";
 
 export default function ProductDetail() {
   const [, params] = useRoute("/products/:id");
   const slug = params?.id ?? "";          // may be "samsung-s26-ultra" or "42"
 
   // Fetch by slug (or numeric id) — backend accepts both
-  const { data: product, isLoading } = useQuery<Product>({
+  const { data: product, isLoading, isError } = useQuery<Product>({
     queryKey: [`/api/products/${slug}`],
     queryFn: async ({ signal }) => {
       const token = localStorage.getItem("token");
@@ -35,6 +36,7 @@ export default function ProductDetail() {
       return res.json();
     },
     enabled: !!slug,
+      retry: false,
   });
 
   // Once we have the product, load variants by numeric id
@@ -52,13 +54,57 @@ export default function ProductDetail() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // SEO: set page title when product loads
+  // Product-specific SEO and structured data.
   useEffect(() => {
     if (product?.name) {
-      document.title = `${product.name} — Buy Online | Gadget Salalah, Salalah Oman`;
+      const description = (product.description || `Buy ${product.name} from Gadget Salalah in Salalah, Oman.`)
+        .replace(/\s+/g, " ")
+        .slice(0, 160);
+      const canonicalSlug = product.slug || String(product.id);
+      setSeo({
+        title: `${product.name} | Gadget Salalah`,
+        description,
+        path: `/products/${canonicalSlug}`,
+        image: product.imageUrl,
+        type: "product",
+        jsonLd: {
+          "@context": "https://schema.org",
+          "@type": "Product",
+          name: product.name,
+          description,
+          url: `${SITE_URL}/products/${canonicalSlug}`,
+          image: product.imageUrl ? [product.imageUrl] : undefined,
+          sku: product.sku || undefined,
+          brand: product.brand ? { "@type": "Brand", name: product.brand } : undefined,
+          category: product.categoryName || undefined,
+          offers: {
+            "@type": "Offer",
+            url: `${SITE_URL}/products/${canonicalSlug}`,
+            priceCurrency: "OMR",
+            price: Number(product.price).toFixed(3),
+            availability: product.stock > 0
+              ? "https://schema.org/InStock"
+              : "https://schema.org/OutOfStock",
+            seller: { "@type": "Organization", name: "Gadget Salalah" },
+          },
+          aggregateRating: product.reviewCount && product.rating
+            ? {
+                "@type": "AggregateRating",
+                ratingValue: product.rating,
+                reviewCount: product.reviewCount,
+              }
+            : undefined,
+        },
+      });
+    } else if (!isLoading && isError) {
+      setSeo({
+        title: "Product Not Found | Gadget Salalah",
+        description: "The requested product could not be found at Gadget Salalah.",
+        path: `/products/${slug}`,
+        noindex: true,
+      });
     }
-    return () => { document.title = "Gadget Salalah — Dhofar's #1 Tech Store"; };
-  }, [product?.name]);
+  }, [product, isLoading, isError, slug]);
 
   // Group variants by option name
   const variantGroups = useMemo(() => {
@@ -126,7 +172,11 @@ export default function ProductDetail() {
   if (!product)
     return (
       <AppLayout>
-        <div className="p-12 text-center">Product not found</div>
+        <div className="container mx-auto p-12 text-center">
+          <h1 className="text-2xl font-bold">Product not found</h1>
+          <p className="mt-2 text-muted-foreground">This product may have been removed or is no longer available.</p>
+          <Link href="/products" className="mt-6 inline-block text-primary underline">Browse products</Link>
+        </div>
       </AppLayout>
     );
 

@@ -10,6 +10,7 @@ import bannersRouter from "./banners";
 import adminRouter from "./admin";
 import setupRouter from "./setup";
 import seedRouter from "./seed";
+import seoRouter from "./seo";
 
 const router: IRouter = Router();
 
@@ -24,5 +25,6 @@ router.use(ordersRouter);
 router.use(bannersRouter);
 router.use(adminRouter);
 router.use(seedRouter);
+router.use(seoRouter);
 
 export default router;
