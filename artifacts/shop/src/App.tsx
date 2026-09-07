@@ -23,6 +23,7 @@ import About from "./pages/about";
 import Contact from "./pages/contact";
 import MobileService from "./pages/mobile-service";
 import SpareParts from "./pages/spare-parts";
+import ReturnPolicy from "./pages/return-policy";
 import AccountPage from "./pages/account";
 import SettingsPage from "./pages/settings";
 
@@ -61,7 +62,7 @@ function Router() {
   const isPrivate = /^\/(account|settings|orders|admin)(\/|$)/.test(path);
   const isNoindexUtility = /^\/(cart|checkout)(\/|$)/.test(path);
   const isAuth = path === "/login" || path === "/register";
-  const isKnownPublic = ["/", "/products", "/categories", "/track", "/about", "/contact", "/mobile-service", "/spare-parts"].includes(path);
+  const isKnownPublic = ["/", "/products", "/categories", "/track", "/about", "/contact", "/mobile-service", "/spare-parts", "/return-policy"].includes(path);
 
   useSeo({
     title:
@@ -79,6 +80,8 @@ function Router() {
                   ? "Mobile Repair & Service in Salalah | Gadget Salalah"
                   : path === "/spare-parts"
                     ? "Mobile Spare Parts in Salalah | Gadget Salalah"
+                     : path === "/return-policy"
+                       ? "Return Policy | Gadget Salalah"
                     : path === "/track"
                       ? "Track Your Order | Gadget Salalah"
                          : isPrivate || isNoindexUtility || isAuth
@@ -100,6 +103,7 @@ function Router() {
       <Route path="/contact" component={Contact} />
       <Route path="/mobile-service" component={MobileService} />
       <Route path="/spare-parts" component={SpareParts} />
+      <Route path="/return-policy" component={ReturnPolicy} />
       
       <Route path="/login"><AuthPage isLogin={true} /></Route>
       <Route path="/register"><AuthPage isLogin={false} /></Route>
