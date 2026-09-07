@@ -1,13 +1,13 @@
 import { Link, useLocation } from "wouter";
-import { Home, Grid3X3, Package, User, Wrench } from "lucide-react";
+import { Home, Package, User, Wrench, ShoppingBag } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 
 const ITEMS = [
   { href: "/",               label: "Home",           icon: Home,    exact: true },
-  { href: "/products",       label: "Shop",           icon: Grid3X3 },
-  { href: "/mobile-service", label: "Service",        icon: Wrench  },
   { href: "/orders",         label: "Orders",         icon: Package, authRequired: true },
+  { href: "/products",       label: "Shop",           icon: ShoppingBag },
+  { href: "/mobile-service", label: "Service",        icon: Wrench  },
   { href: "/account",        label: "Account",        icon: User,    isAccount: true, authHref: "/login" },
 ];
 
