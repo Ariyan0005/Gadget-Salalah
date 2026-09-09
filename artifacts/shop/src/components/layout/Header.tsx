@@ -2,9 +2,9 @@ import { Link, useLocation } from "wouter";
 import { useAuth } from "@/context/AuthContext";
 import { useGetCart, useListCategories, getGetCartQueryKey } from "@workspace/api-client-react";
 import {
-  ShoppingCart, Menu, Search, User, LogOut,
+  ShoppingCart, Menu, Search, User, LogOut, ArrowLeft, Check, X,
   Home as HomeIcon, Navigation, ChevronRight, Grid3X3, Wrench,
-  Puzzle, Settings, PhoneCall, LayoutDashboard, UserCircle, Package, Globe,
+  Puzzle, Settings, PhoneCall, LayoutDashboard, UserCircle, Package, Tag,
 } from "lucide-react";
 import { useLang, LANGUAGES } from "@/context/LanguageContext";
 import { Button } from "@/components/ui/button";
@@ -13,8 +13,8 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { useState, useEffect } from "react";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { FormEvent, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useGuestCart } from "@/lib/guest-cart";
 
@@ -27,28 +27,40 @@ const NAV_LINKS = [
   { href: "/track",          label: "Track Order",    icon: Navigation },
 ];
 
-// Sidebar-only extra nav item (Spare Parts under Mobile Service)
-const SPARE_PARTS = { href: "/spare-parts", label: "Spare Parts", icon: Puzzle };
-
 const ANNOUNCEMENTS = [
   "⚡ Free delivery on orders over 100 OMR · Gadget Salalah — Dhofar's #1 Tech Store ⚡",
   "🔧 Mobile Repair in Salalah · Screen, Battery & More · Same Day Service Available 🔧",
 ];
+
+type CategoryNode = {
+  id: number;
+  name: string;
+  slug: string;
+  children?: CategoryNode[];
+  productCount?: number;
+};
 
 export function Header() {
   const { user, logout } = useAuth();
   const [location, setLocation] = useLocation();
   const { data: userCart } = useGetCart({ query: { enabled: !!user, queryKey: getGetCartQueryKey() } });
   const guestCart = useGuestCart();
-  const { data: categories } = useListCategories();
+  const {
+    data: categories,
+    isLoading: categoriesLoading,
+    isError: categoriesError,
+    refetch: refetchCategories,
+  } = useListCategories();
   const [searchQuery, setSearchQuery] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<CategoryNode | null>(null);
   const [annIdx, setAnnIdx] = useState(0);
   const [annVisible, setAnnVisible] = useState(true);
 
   const cart = user ? userCart : guestCart;
   const cartCount = cart?.items?.reduce((s: number, i: { quantity: number }) => s + i.quantity, 0) ?? 0;
   const { lang, setLang } = useLang();
+  const categoryList = (categories ?? []) as CategoryNode[];
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -61,7 +73,11 @@ export function Header() {
     return () => clearInterval(timer);
   }, []);
 
-  const handleSearch = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (!menuOpen) setSelectedCategory(null);
+  }, [menuOpen]);
+
+  const handleSearch = (e: FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       setLocation(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
@@ -71,6 +87,15 @@ export function Header() {
   };
 
   const close = () => setMenuOpen(false);
+  const goToCategory = (categoryId: number) => {
+    setLocation(`/products?categoryId=${categoryId}`);
+    close();
+  };
+  const openCategory = (category: CategoryNode) => {
+    // Always open the second level. This keeps the interaction consistent
+    // for flat API responses today and nested categories added later.
+    setSelectedCategory(category);
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full">
@@ -98,125 +123,267 @@ export function Header() {
             {/* ── MOBILE SIDEBAR ── */}
             <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="md:hidden -ml-2" aria-label="Open menu">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="-ml-2 rounded-xl"
+                  aria-label="Open menu"
+                  data-testid="button-open-menu"
+                >
                   <Menu className="h-6 w-6" />
                 </Button>
               </SheetTrigger>
 
-              <SheetContent side="left" className="w-[300px] p-0 flex flex-col overflow-hidden">
-
-                {/* Logo header */}
-                <SheetHeader className="pl-4 pr-12 py-3 border-b shrink-0">
-                  <SheetTitle className="text-left">
-                    <Link href="/" onClick={close} className="flex items-center rounded-md bg-white">
-                        <img
-                          src="/gadget-salalah-logo.png"
-                          alt="Gadget Salalah"
-                          width="180"
-                          height="90"
-                          className="h-9 w-[180px] object-contain object-left shrink-0"
-                        />
-                      </Link>
-                  </SheetTitle>
+              <SheetContent
+                side="left"
+                className="w-[min(88vw,390px)] max-w-none gap-0 p-0 flex flex-col overflow-hidden bg-background [&>button]:hidden"
+              >
+                {/* Menu top bar: intentionally separate from the scroll region so the close action is always reachable. */}
+                <SheetHeader className="shrink-0 border-b border-border/80 bg-primary px-4 py-3 text-primary-foreground">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <SheetTitle className="text-sm font-bold tracking-wide text-primary-foreground">
+                        Menu
+                      </SheetTitle>
+                      <span className="h-4 w-px bg-primary-foreground/25" aria-hidden="true" />
+                      <SheetDescription className="truncate text-xs text-primary-foreground/70">
+                        Shop Gadget Salalah
+                      </SheetDescription>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={close}
+                      aria-label="Close menu"
+                      data-testid="button-close-menu"
+                      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-primary-foreground transition-colors hover:bg-primary-foreground/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
+                    >
+                      <X className="h-5 w-5" aria-hidden="true" />
+                    </button>
+                  </div>
                 </SheetHeader>
 
-                {/* Scrollable body */}
-                <div className="flex-1 overflow-y-auto">
-
-                  {/* ── NAVIGATION section ── */}
-                  <div className="px-3 pt-3 pb-1">
-                    <p className="px-2 mb-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                      Navigation
-                    </p>
-
-                    {NAV_LINKS.map(({ href, label, icon: Icon, exact, subOf }) => {
-                      const active = exact ? location === href : location.startsWith(href);
-                      const isSubItem = !!subOf;
-                      return (
-                        <Link key={href} href={href} onClick={close}
-                          className={cn(
-                            "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors",
-                            isSubItem && "ml-6 mt-0.5",
-                            active
-                              ? "bg-accent/10 text-accent"
-                              : isSubItem
-                              ? "hover:bg-muted text-muted-foreground hover:text-foreground"
-                              : "hover:bg-muted text-foreground"
-                          )}>
-                          <Icon className="h-4 w-4 shrink-0" />
-                          {label}
-                          {active && <ChevronRight className="ml-auto h-3.5 w-3.5 opacity-40" />}
+                {/* One scroll region keeps long category catalogs usable on short phones. */}
+                <div className="relative flex-1 overflow-y-auto overscroll-contain">
+                  {selectedCategory ? (
+                    <div
+                      key={`submenu-${selectedCategory.id}`}
+                      className="animate-in slide-in-from-right-3 duration-200"
+                    >
+                      <div className="sticky top-0 z-10 border-b bg-background/95 px-3 py-2 backdrop-blur">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedCategory(null)}
+                          data-testid="button-back-to-categories"
+                          className="flex min-h-11 w-full items-center gap-2 rounded-xl px-2 text-sm font-semibold text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        >
+                          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                          <span>Back to categories</span>
+                        </button>
+                      </div>
+                      <div className="px-4 pb-6 pt-4">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-accent">
+                          Category
+                        </p>
+                        <h2 className="mt-1 text-xl font-bold tracking-tight">{selectedCategory.name}</h2>
+                        <Link
+                          href={`/products?categoryId=${selectedCategory.id}`}
+                          onClick={close}
+                          data-testid={`link-category-${selectedCategory.id}`}
+                          className="mt-4 flex min-h-12 items-center justify-between rounded-xl border border-accent/20 bg-accent/5 px-3.5 text-sm font-semibold text-accent transition-colors hover:bg-accent/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        >
+                          Browse all {selectedCategory.name}
+                          <ChevronRight className="h-4 w-4" aria-hidden="true" />
                         </Link>
-                      );
-                    })}
-                  </div>
+                        {selectedCategory.children?.length ? (
+                          <div className="mt-5 space-y-1">
+                            <p className="px-3 pb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                              Shop by type
+                            </p>
+                            {selectedCategory.children.map((child) => (
+                              <Link
+                                key={child.id}
+                                href={`/products?categoryId=${child.id}`}
+                                onClick={close}
+                                data-testid={`link-category-child-${child.id}`}
+                                className="flex min-h-12 items-center gap-3 rounded-xl px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                              >
+                                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                                  <Tag className="h-4 w-4" aria-hidden="true" />
+                                </span>
+                                <span className="flex-1">{child.name}</span>
+                                <ChevronRight className="h-4 w-4 text-muted-foreground/60" aria-hidden="true" />
+                              </Link>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="mt-5 rounded-xl border border-dashed px-3 py-4">
+                            <p className="text-sm font-medium text-foreground">Ready to explore</p>
+                            <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                              Browse the latest products in this category.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="animate-in fade-in duration-200">
+                      <div className="border-b px-4 pb-3 pt-4">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-accent">Explore</p>
+                        <p className="mt-1 text-sm text-muted-foreground">Find the right tech for your day.</p>
+                      </div>
 
-                  {/* ── CATEGORIES section ── */}
-                  {categories && categories.length > 0 && (
-                    <div className="px-3 pt-2 pb-1">
-                      <p className="px-2 mb-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                        Categories
-                      </p>
-                      {categories.slice(0, 8).map((cat: { id: number; name: string; slug: string }) => (
-                        <Link key={cat.id} href={`/products?categoryId=${cat.id}`} onClick={close}
-                          className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm font-medium hover:bg-muted text-foreground transition-colors">
-                          <span className="h-1.5 w-1.5 rounded-full bg-accent/60 shrink-0" />
-                          {cat.name}
-                        </Link>
-                      ))}
-                      <Link href="/products" onClick={close}
-                        className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm font-semibold text-accent hover:bg-accent/5 transition-colors">
-                        View all →
-                      </Link>
+                      <div className="px-3 pb-2 pt-3">
+                        <p className="px-2 pb-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                          Navigation
+                        </p>
+                        {NAV_LINKS.map(({ href, label, icon: Icon, exact, subOf }) => {
+                          const active = exact ? location === href : location.startsWith(href);
+                          const isSubItem = !!subOf;
+                          return (
+                            <Link
+                              key={href}
+                              href={href}
+                              onClick={close}
+                              data-testid={`link-menu-${label.toLowerCase().replace(/\s+/g, "-")}`}
+                              className={cn(
+                                "flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                                isSubItem && "ml-6 min-h-10",
+                                active
+                                  ? "bg-accent/10 text-accent"
+                                  : isSubItem
+                                    ? "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                    : "text-foreground hover:bg-muted",
+                              )}
+                            >
+                              <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                              <span>{label}</span>
+                              {active && <ChevronRight className="ml-auto h-3.5 w-3.5 opacity-50" aria-hidden="true" />}
+                            </Link>
+                          );
+                        })}
+                      </div>
+
+                      <div className="border-t px-3 pb-3 pt-3">
+                        <div className="flex items-center justify-between px-2 pb-1.5">
+                          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                            Categories
+                          </p>
+                          {categoryList.length > 0 && (
+                            <span className="text-[10px] font-medium text-muted-foreground">
+                              {categoryList.length} available
+                            </span>
+                          )}
+                        </div>
+                        {categoriesLoading ? (
+                          <div className="space-y-2 px-2 py-2" aria-label="Loading categories" role="status">
+                            {[1, 2, 3, 4].map((item) => (
+                              <div key={item} className="h-11 animate-pulse rounded-xl bg-muted" />
+                            ))}
+                          </div>
+                        ) : categoriesError ? (
+                          <div className="rounded-xl border border-destructive/20 bg-destructive/5 px-3 py-3">
+                            <p className="text-sm font-medium text-destructive">Categories are unavailable.</p>
+                            <button
+                              type="button"
+                              onClick={() => void refetchCategories()}
+                              data-testid="button-retry-categories"
+                              className="mt-2 text-xs font-semibold text-destructive underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            >
+                              Try again
+                            </button>
+                          </div>
+                        ) : categoryList.length === 0 ? (
+                          <div className="rounded-xl border border-dashed px-3 py-4 text-center">
+                            <p className="text-sm font-medium text-foreground">No categories yet</p>
+                            <p className="mt-1 text-xs text-muted-foreground">Browse all products to get started.</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-0.5">
+                            {categoryList.map((category) => {
+                              const hasChildren = Boolean(category.children?.length);
+                              return (
+                                <button
+                                  key={category.id}
+                                  type="button"
+                                  onClick={() => openCategory(category)}
+                                  data-testid={`button-category-${category.id}`}
+                                  className="group flex min-h-12 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                >
+                                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground transition-colors group-hover:bg-accent/10 group-hover:text-accent">
+                                    <Tag className="h-4 w-4" aria-hidden="true" />
+                                  </span>
+                                  <span className="flex-1 truncate">{category.name}</span>
+                                  {hasChildren ? (
+                                    <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" aria-hidden="true" />
+                                  ) : (
+                                    <span className="text-[11px] text-muted-foreground/70">Shop</span>
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="border-t px-3 pb-6 pt-3">
+                        <p className="px-2 pb-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                          Account
+                        </p>
+                        {!user ? (
+                          <>
+                            <Link
+                              href="/login"
+                              onClick={close}
+                              data-testid="link-menu-sign-in"
+                              className="flex min-h-11 items-center gap-3 rounded-xl bg-accent px-3 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            >
+                              <User className="h-4 w-4" aria-hidden="true" /> Sign In
+                            </Link>
+                            <Link
+                              href="/register"
+                              onClick={close}
+                              data-testid="link-menu-create-account"
+                              className="mt-1 flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            >
+                              <UserCircle className="h-4 w-4" aria-hidden="true" /> Create Account
+                            </Link>
+                          </>
+                        ) : (
+                          <>
+                            <Link
+                              href="/account"
+                              onClick={close}
+                              data-testid="link-menu-account"
+                              className="flex items-center gap-3 rounded-xl bg-muted/50 px-3 py-2.5 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            >
+                              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/15 text-sm font-black text-accent">
+                                {user.name?.charAt(0).toUpperCase() ?? "U"}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-semibold">{user.name}</p>
+                                <p className="truncate text-[11px] text-muted-foreground">{user.email}</p>
+                              </div>
+                              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/50" aria-hidden="true" />
+                            </Link>
+                            <button
+                              type="button"
+                              onClick={() => { logout(); close(); }}
+                              data-testid="button-menu-sign-out"
+                              className="mt-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold text-destructive transition-colors hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            >
+                              <LogOut className="h-4 w-4" aria-hidden="true" /> Sign Out
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </div>
                   )}
-
-                  {/* ── ACCOUNT section ── */}
-                  <div className="px-3 pt-2 pb-3 border-t mt-2">
-                    <p className="px-2 mb-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                      Account
-                    </p>
-
-                    {!user ? (
-                      <>
-                        <Link href="/login" onClick={close}
-                          className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-semibold bg-accent text-white hover:bg-accent/90 transition-colors">
-                          <User className="h-4 w-4" /> Sign In
-                        </Link>
-                        <Link href="/register" onClick={close}
-                          className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium hover:bg-muted text-foreground transition-colors mt-0.5">
-                          <UserCircle className="h-4 w-4" /> Create Account
-                        </Link>
-                      </>
-                    ) : (
-                      <>
-                        {/* User info — tapping opens Account page */}
-                        <Link href="/account" onClick={close}
-                          className="flex items-center gap-3 px-2.5 py-2.5 mb-1 bg-muted/40 hover:bg-muted/70 rounded-lg transition-colors">
-                          <div className="h-8 w-8 rounded-full bg-accent/15 flex items-center justify-center shrink-0 text-accent font-black text-sm">
-                            {user.name?.charAt(0).toUpperCase() ?? "U"}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold leading-tight truncate">{user.name}</p>
-                            <p className="text-[11px] text-muted-foreground truncate">{user.email}</p>
-                          </div>
-                          <ChevronRight className="h-4 w-4 text-muted-foreground/50 shrink-0" />
-                        </Link>
-
-                        {/* Sign Out — distinct red button, pushed lower */}
-                        <button onClick={() => { logout(); close(); }}
-                          className="flex w-full items-center justify-center gap-2.5 rounded-xl px-2.5 py-2.5 mt-3 text-sm font-semibold bg-red-500 text-white hover:bg-red-600 active:bg-red-700 transition-colors shadow-sm">
-                          <LogOut className="h-4 w-4" /> Sign Out
-                        </button>
-                      </>
-                    )}
-                  </div>
                 </div>
               </SheetContent>
             </Sheet>
 
             {/* Logo */}
-            <Link href="/" className="flex items-center shrink-0 rounded-md bg-white">
+            <Link href="/" data-testid="link-header-logo" className="flex items-center shrink-0 rounded-md bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 <img
                   src="/gadget-salalah-logo.png"
                   alt="Gadget Salalah"
@@ -232,7 +399,7 @@ export function Header() {
             {NAV_LINKS.map(({ href, label, exact }) => {
               const active = exact ? location === href : location.startsWith(href);
               return (
-                <Link key={href} href={href}
+                <Link key={href} href={href} data-testid={`link-desktop-${label.toLowerCase().replace(/\s+/g, "-")}`}
                   className={cn(
                     "px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                     active ? "text-accent bg-accent/10" : "text-foreground/70 hover:text-foreground hover:bg-muted"
@@ -242,7 +409,7 @@ export function Header() {
               );
             })}
             {/* Spare Parts in desktop nav too */}
-            <Link href="/spare-parts"
+            <Link href="/spare-parts" data-testid="link-desktop-spare-parts"
               className={cn(
                 "px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                 location.startsWith("/spare-parts") ? "text-accent bg-accent/10" : "text-foreground/70 hover:text-foreground hover:bg-muted"
@@ -252,13 +419,14 @@ export function Header() {
           </nav>
 
           {/* Desktop search */}
-          <form onSubmit={handleSearch} className="relative hidden lg:flex flex-1 max-w-xs">
+          <form onSubmit={handleSearch} className="relative hidden lg:flex flex-1 max-w-xs" data-testid="form-desktop-search">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search gadgets..."
               className="pl-9 rounded-full h-9 bg-muted/60 border-transparent"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
+              data-testid="input-desktop-search"
             />
           </form>
 
@@ -268,7 +436,7 @@ export function Header() {
             {/* Language switcher — pill style */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-1.5 rounded-full border border-border bg-muted/60 hover:bg-muted px-3 py-1.5 text-sm font-medium text-foreground transition-colors select-none">
+                <button data-testid="button-language-menu" className="flex items-center gap-1.5 rounded-full border border-border bg-muted/60 hover:bg-muted px-3 py-1.5 text-sm font-medium text-foreground transition-colors select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                   {LANGUAGES.find(l => l.code === lang)?.nativeLabel}
                   <ChevronRight className="h-3.5 w-3.5 rotate-90 text-muted-foreground" />
                 </button>
@@ -278,32 +446,31 @@ export function Header() {
                   <DropdownMenuItem
                     key={l.code}
                     onClick={() => setLang(l.code)}
+                    data-testid={`menu-language-${l.code}`}
                     className={lang === l.code ? "bg-accent/10 text-accent font-semibold" : ""}
                   >
-                    <span className="mr-2">{l.code === "ar" ? "🇴🇲" : l.code === "en" ? "🇬🇧" : l.code === "hi" ? "🇮🇳" : "🇧🇩"}</span>
+                    <span className="mr-2 inline-flex h-5 w-5 items-center justify-center rounded bg-muted text-[10px] font-bold uppercase text-muted-foreground">{l.code}</span>
                     {l.nativeLabel}
-                    {lang === l.code && <span className="ml-auto text-accent">✓</span>}
+                    {lang === l.code && <Check className="ml-auto h-4 w-4 text-accent" aria-hidden="true" />}
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
 
             {/* Cart — bigger, accent coloured */}
-            <Link href="/cart">
-              <button className="relative flex items-center justify-center h-10 w-10 rounded-full hover:bg-accent/10 transition-colors">
+            <Link href="/cart" data-testid="link-cart" className="relative flex items-center justify-center h-10 w-10 rounded-full hover:bg-accent/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 <ShoppingCart className="h-[26px] w-[26px] text-accent stroke-[1.8px]" />
                 {cartCount > 0 && (
                   <span className="absolute -top-0.5 -right-0.5 h-4 min-w-4 px-1 rounded-full bg-accent text-white text-[10px] font-bold flex items-center justify-center leading-none">
                     {cartCount > 9 ? "9+" : cartCount}
                   </span>
                 )}
-              </button>
             </Link>
 
             {/* Desktop Account dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="hidden sm:flex">
+                <Button variant="ghost" size="icon" className="hidden sm:flex" data-testid="button-account-menu" aria-label="Open account menu">
                   <User className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
@@ -311,10 +478,10 @@ export function Header() {
                 {!user ? (
                   <>
                     <DropdownMenuItem asChild>
-                      <Link href="/login" className="w-full cursor-pointer font-medium">Sign In</Link>
+                      <Link href="/login" data-testid="link-account-sign-in" className="w-full cursor-pointer font-medium">Sign In</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href="/register" className="w-full cursor-pointer">Register</Link>
+                      <Link href="/register" data-testid="link-account-register" className="w-full cursor-pointer">Register</Link>
                     </DropdownMenuItem>
                   </>
                 ) : (
@@ -327,7 +494,7 @@ export function Header() {
                     {user.role === "admin" && (
                       <>
                         <DropdownMenuItem asChild>
-                          <Link href="/admin" className="w-full cursor-pointer font-bold text-accent">
+                          <Link href="/admin" data-testid="link-account-admin" className="w-full cursor-pointer font-bold text-accent">
                             <LayoutDashboard className="mr-2 h-4 w-4" /> Admin Dashboard
                           </Link>
                         </DropdownMenuItem>
@@ -335,22 +502,22 @@ export function Header() {
                       </>
                     )}
                     <DropdownMenuItem asChild>
-                      <Link href="/account" className="w-full cursor-pointer">
+                      <Link href="/account" data-testid="link-account-profile" className="w-full cursor-pointer">
                         <UserCircle className="mr-2 h-4 w-4" /> My Account
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href="/orders" className="w-full cursor-pointer">
+                      <Link href="/orders" data-testid="link-account-orders" className="w-full cursor-pointer">
                         <Package className="mr-2 h-4 w-4" /> My Orders
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href="/settings" className="w-full cursor-pointer">
+                      <Link href="/settings" data-testid="link-account-settings" className="w-full cursor-pointer">
                         <Settings className="mr-2 h-4 w-4" /> Settings
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href="/contact" className="w-full cursor-pointer">
+                      <Link href="/contact" data-testid="link-account-contact" className="w-full cursor-pointer">
                         <PhoneCall className="mr-2 h-4 w-4" /> Contact Us
                       </Link>
                     </DropdownMenuItem>
@@ -369,13 +536,14 @@ export function Header() {
 
         {/* Mobile search bar */}
         <div className="px-4 pb-3 md:hidden border-t pt-2">
-          <form onSubmit={handleSearch} className="relative">
+           <form onSubmit={handleSearch} className="relative" data-testid="form-mobile-search">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search gadgets..."
               className="pl-9 rounded-full h-9 bg-muted/60 border-transparent"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
+              data-testid="input-mobile-search"
             />
           </form>
         </div>
