@@ -15,10 +15,14 @@ export function Footer() {
 
           {/* Brand */}
           <div className="space-y-4">
-            <Link href="/" className="inline-block">
-              <span className="text-2xl font-black tracking-tight text-white">
-                Gadget<span className="text-accent">Salalah</span>
-              </span>
+            <Link href="/" className="inline-flex items-center rounded-lg bg-white px-3 py-2 shadow-sm">
+              <img
+                src="/gadgetsalalah-logo-clean.png"
+                alt="Gadget Salalah"
+                width="190"
+                height="67"
+                className="h-10 w-[190px] object-contain object-left"
+              />
             </Link>
             <p className="text-sm leading-relaxed text-slate-400">
               Oman's trusted destination for genuine smartphones, accessories, and premium electronics — delivered fast across the Sultanate.
