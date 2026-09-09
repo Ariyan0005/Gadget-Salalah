@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { Link, useLocation } from "wouter";
 import { useListProducts, useListCategories } from "@workspace/api-client-react";
 import { ProductCard } from "@/components/ui/product-card";
@@ -23,13 +23,14 @@ import {
 } from "@/components/ui/sheet";
 
 export default function Products() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const searchParams = new URLSearchParams(window.location.search);
   
   const initialSearch = searchParams.get("search") || "";
   const initialCategory = searchParams.get("categoryId") || "all";
   
   const [search, setSearch] = useState(initialSearch);
+  const [searchDraft, setSearchDraft] = useState(initialSearch);
   const [categoryId, setCategoryId] = useState(initialCategory);
   const [sortBy, setSortBy] = useState("newest");
   const [priceRange, setPriceRange] = useState([0, 200000]);
@@ -41,6 +42,16 @@ export default function Products() {
     }, 500);
     return () => clearTimeout(timer);
   }, [priceRange]);
+
+  useEffect(() => {
+    const queryString = location.includes("?") ? location.slice(location.indexOf("?") + 1) : "";
+    const params = new URLSearchParams(queryString);
+    const nextSearch = params.get("search") || "";
+    const nextCategory = params.get("categoryId") || "all";
+    setSearch(nextSearch);
+    setSearchDraft(nextSearch);
+    setCategoryId(nextCategory);
+  }, [location]);
 
   const { data: productsData, isLoading } = useListProducts({
     search: search || undefined,
@@ -55,9 +66,21 @@ export default function Products() {
 
   const resetFilters = () => {
     setSearch("");
+    setSearchDraft("");
     setCategoryId("all");
     setSortBy("newest");
     setPriceRange([0, 200000]);
+  };
+
+  const submitSearch = (event: FormEvent) => {
+    event.preventDefault();
+    const nextSearch = searchDraft.trim();
+    const params = new URLSearchParams(location.includes("?") ? location.slice(location.indexOf("?") + 1) : "");
+    if (nextSearch) params.set("search", nextSearch);
+    else params.delete("search");
+    params.delete("page");
+    const query = params.toString();
+    setLocation(query ? `/products?${query}` : "/products");
   };
 
   const FilterContent = () => (
@@ -121,6 +144,20 @@ export default function Products() {
               <h1 className="text-2xl font-bold text-foreground">
                 {search ? `Search results for "${search}"` : "All Products"}
               </h1>
+
+              <form onSubmit={submitSearch} className="flex w-full sm:max-w-sm items-center gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    aria-label="Search products"
+                    placeholder="Search products..."
+                    className="pl-9 rounded-full h-9"
+                    value={searchDraft}
+                    onChange={(event) => setSearchDraft(event.target.value)}
+                  />
+                </div>
+                <Button type="submit" size="sm">Search</Button>
+              </form>
 
               <div className="flex items-center gap-2">
                 {/* Mobile Filter Sheet */}
