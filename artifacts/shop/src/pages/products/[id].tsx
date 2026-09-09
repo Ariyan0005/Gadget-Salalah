@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { setSeo, SITE_URL } from "@/lib/seo";
 import { useAuth } from "@/context/AuthContext";
 import { addGuestProduct } from "@/lib/guest-cart";
+import { optimizeImageUrl } from "@/lib/image-url";
 
 export default function ProductDetail() {
   const [, params] = useRoute("/products/:id");
@@ -235,7 +236,17 @@ export default function ProductDetail() {
           {/* Image */}
           <div className="relative aspect-square overflow-hidden rounded-3xl bg-muted lg:sticky lg:top-24">
             {product.imageUrl ? (
-              <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover" />
+              <img
+                src={optimizeImageUrl(product.imageUrl, 900)}
+                alt={product.name}
+                width={900}
+                height={900}
+                loading="eager"
+                fetchPriority="high"
+                decoding="async"
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                className="h-full w-full object-cover"
+              />
             ) : (
               <div className="flex h-full w-full items-center justify-center bg-primary/5 text-primary">
                 <span className="text-4xl font-bold opacity-30">{product.categoryName || "Gadget"}</span>

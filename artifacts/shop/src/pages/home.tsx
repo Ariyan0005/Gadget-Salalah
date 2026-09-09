@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
 import { useCallback, useEffect, useState } from "react";
+import { optimizeImageUrl } from "@/lib/image-url";
 
 const TRUST_BADGES = [
   { icon: Truck, label: "Free Delivery", sub: "Orders over 100 OMR" },
@@ -69,7 +70,7 @@ export default function Home() {
                 <div key={banner.id} className="relative min-w-full flex-none">
                   <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/40 to-transparent z-10" />
                   <img
-                    src={banner.imageUrl}
+                    src={optimizeImageUrl(banner.imageUrl, 1920, "fill")}
                     alt={banner.title}
                     width={1920}
                     height={520}
@@ -223,7 +224,7 @@ export default function Home() {
               >
                 {cat.imageUrl ? (
                   <img
-                    src={cat.imageUrl}
+                    src={optimizeImageUrl(cat.imageUrl, 96)}
                     alt={cat.name}
                     width={48}
                     height={48}

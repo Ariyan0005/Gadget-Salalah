@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ShoppingCart, Star } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { addGuestProduct } from "@/lib/guest-cart";
+import { optimizeImageUrl } from "@/lib/image-url";
 
 export function ProductCard({ product }: { product: Product }) {
   const addToCartMutation = useAddToCart();
@@ -52,12 +53,13 @@ export function ProductCard({ product }: { product: Product }) {
       <div className="relative aspect-square overflow-hidden bg-slate-50 dark:bg-muted">
         {product.imageUrl ? (
           <img
-            src={product.imageUrl}
+            src={optimizeImageUrl(product.imageUrl, 480)}
             alt={product.name}
             width={480}
             height={480}
             loading="lazy"
             decoding="async"
+            sizes="(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 18vw"
             className="h-full w-full object-cover md:transition-transform md:duration-300 md:group-hover:scale-105"
           />
         ) : (
