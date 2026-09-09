@@ -141,48 +141,7 @@ export default function Home() {
             </>
           )}
         </section>
-      ) : (
-        /* Fallback Hero when no banners */
-        <section className="relative w-full overflow-hidden bg-gradient-to-br from-[#0f172a] via-[#1a2332] to-[#0d1b2a] py-20 px-6">
-          <div
-            className="absolute inset-0 opacity-10"
-            style={{
-              backgroundImage:
-                "radial-gradient(circle at 20% 50%, #00BFFF 0%, transparent 55%), radial-gradient(circle at 80% 20%, #0066cc 0%, transparent 50%)",
-            }}
-          />
-          <div className="container mx-auto text-center text-white relative z-10">
-            <p className="text-accent text-xs font-bold uppercase tracking-widest mb-4">
-              Gadget Salalah — Dhofar's Tech Hub
-            </p>
-            <h1 className="text-4xl md:text-6xl font-black mb-6 leading-tight">
-              Latest Gadgets
-              <br />
-              <span className="text-accent">Best Prices</span> in Oman
-            </h1>
-            <p className="text-lg mb-10 opacity-80 max-w-xl mx-auto">
-              Smartphones, laptops, accessories &amp; more — delivered to your door in Dhofar.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button
-                asChild
-                size="lg"
-                className="bg-accent hover:bg-accent/90 text-white rounded-full px-10 font-bold shadow-xl shadow-accent/30"
-              >
-                <Link href="/products">Shop Now <ChevronRight className="ml-1 h-4 w-4" /></Link>
-              </Button>
-              <Button
-                asChild
-                size="lg"
-                variant="outline"
-                className="rounded-full px-10 border-white/40 text-white hover:bg-white/10"
-              >
-                <Link href="/categories">Browse Categories</Link>
-              </Button>
-            </div>
-          </div>
-        </section>
-      )}
+      ) : null}
 
       {/* ── Trust Badges ───────────────────────────────────────────── */}
       <section className="border-b bg-card">
