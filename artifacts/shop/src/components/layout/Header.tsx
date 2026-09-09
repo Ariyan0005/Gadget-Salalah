@@ -64,7 +64,8 @@ export function Header() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      setLocation(`/products?search=${encodeURIComponent(searchQuery)}`);
+      setLocation(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchQuery("");
       setMenuOpen(false);
     }
   };
@@ -107,13 +108,15 @@ export function Header() {
                 {/* Logo header */}
                 <SheetHeader className="pl-4 pr-12 py-3 border-b shrink-0">
                   <SheetTitle className="text-left">
-                    <Link href="/" onClick={close} className="flex items-center gap-2">
-                      <img src="/logo.jpg" alt="Gadget Salalah" className="h-7 w-7 rounded object-cover shrink-0" />
-                      <span>
-                        <span className="font-black text-base text-[#1a2332]">Gadget</span>
-                        <span className="font-black text-base text-accent">Salalah</span>
-                      </span>
-                    </Link>
+                    <Link href="/" onClick={close} className="flex items-center rounded-md bg-white">
+                        <img
+                          src="/gadget-salalah-logo.png"
+                          alt="Gadget Salalah"
+                          width="180"
+                          height="90"
+                          className="h-9 w-[180px] object-contain object-left shrink-0"
+                        />
+                      </Link>
                   </SheetTitle>
                 </SheetHeader>
 
@@ -213,12 +216,15 @@ export function Header() {
             </Sheet>
 
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2 shrink-0">
-              <img src="/logo.jpg" alt="Gadget Salalah" className="h-9 w-9 rounded-lg object-cover hidden sm:block" />
-              <span className="font-black text-xl leading-none tracking-tight">
-                <span className="text-[#1a2332]">Gadget</span><span className="text-accent">Salalah</span>
-              </span>
-            </Link>
+            <Link href="/" className="flex items-center shrink-0 rounded-md bg-white">
+                <img
+                  src="/gadget-salalah-logo.png"
+                  alt="Gadget Salalah"
+                  width="190"
+                  height="95"
+                  className="h-10 w-[190px] max-w-[42vw] object-contain object-left"
+                />
+              </Link>
           </div>
 
           {/* Desktop nav */}
