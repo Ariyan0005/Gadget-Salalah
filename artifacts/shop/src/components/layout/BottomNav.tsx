@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 const ITEMS = [
   { href: "/",               label: "Home",           icon: Home,    exact: true },
   { href: "/orders",         label: "Orders",         icon: Package, authRequired: true, guestHref: "/track" },
-  { href: "/products",       label: "Shop",           icon: ShoppingBag },
+  { href: "/products",       label: "Shop",           icon: ShoppingBag, logo: true },
   { href: "/mobile-service", label: "Service",        icon: Wrench  },
   { href: "/account",        label: "Account",        icon: User,    isAccount: true, authHref: "/login" },
 ];
@@ -18,7 +18,7 @@ export function BottomNav() {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white/95 backdrop-blur-md border-t border-border/60 shadow-[0_-2px_16px_rgba(0,0,0,0.07)]">
       <div className="flex items-stretch h-[60px] px-1">
-        {ITEMS.map(({ href, label, icon: Icon, exact, isAccount, authRequired, guestHref }) => {
+        {ITEMS.map(({ href, label, icon: Icon, logo, exact, isAccount, authRequired, guestHref }) => {
           const finalHref = isAccount
             ? (user ? "/account" : "/login")
             : authRequired && !user
@@ -44,14 +44,23 @@ export function BottomNav() {
                     : "group-hover:bg-muted/60"
                 )}
               >
-                <Icon
-                  className={cn(
-                    "h-[22px] w-[22px] transition-all duration-200",
-                    isActive
-                      ? "text-accent stroke-[2.2px]"
-                      : "text-muted-foreground stroke-[1.7px]"
-                  )}
-                />
+                {logo ? (
+                  <img
+                    src="/favicon-32.png"
+                    alt=""
+                    aria-hidden="true"
+                    className="h-[22px] w-[22px] object-contain"
+                  />
+                ) : (
+                  <Icon
+                    className={cn(
+                      "h-[22px] w-[22px] transition-all duration-200",
+                      isActive
+                        ? "text-accent stroke-[2.2px]"
+                        : "text-muted-foreground stroke-[1.7px]"
+                    )}
+                  />
+                )}
                 <span
                   className={cn(
                     "text-[10px] leading-none transition-all duration-200",
