@@ -11,7 +11,7 @@ import { useAuth } from "@/context/AuthContext";
 import { addGuestProduct } from "@/lib/guest-cart";
 import { optimizeImageUrl } from "@/lib/image-url";
 
-export function ProductCard({ product }: { product: Product }) {
+export function ProductCard({ product, priority = false }: { product: Product; priority?: boolean }) {
   const addToCartMutation = useAddToCart();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -57,7 +57,8 @@ export function ProductCard({ product }: { product: Product }) {
             alt={product.name}
             width={480}
             height={480}
-            loading="lazy"
+            loading={priority ? "eager" : "lazy"}
+            fetchPriority={priority ? "high" : "auto"}
             decoding="async"
             sizes="(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 18vw"
             className="h-full w-full object-cover md:transition-transform md:duration-300 md:group-hover:scale-105"
