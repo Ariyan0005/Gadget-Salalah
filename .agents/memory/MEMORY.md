@@ -1,2 +1,3 @@
+- [Imported workspace validation](imported-workspace-validation.md) — refresh generated library declarations after importing a pnpm monorepo, and scope dependency installs when unrelated codegen packages are blocked.
 - [TechShop project gotchas](techshop-gotchas.md) — critical lib rebuild, deep import, bcrypt version, and banner image pitfalls for this project.
 - [TechShop payment & delivery design](payment-delivery.md) — COD pre-pay delivery charge, online adds charge to total, Dhofar-only delivery (OMR charges).

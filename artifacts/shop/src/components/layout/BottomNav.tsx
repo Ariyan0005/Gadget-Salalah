@@ -46,7 +46,7 @@ export function BottomNav() {
               >
                 {logo ? (
                   <img
-                    src="/favicon-32.png"
+                    src="/favicon.png"
                     alt=""
                     aria-hidden="true"
                     className="h-[22px] w-[22px] object-contain"

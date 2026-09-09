@@ -1,7 +1,6 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import {
   useListBanners,
-  useListCategories,
   useGetFeaturedProducts,
   useGetNewArrivals,
   useGetMostDiscounted,
@@ -12,10 +11,6 @@ import { Button } from "@/components/ui/button";
 import {
   ChevronRight,
   ArrowRight,
-  Truck,
-  Shield,
-  RefreshCw,
-  Headphones,
   Flame,
   Sparkles,
   ChevronLeft,
@@ -25,16 +20,8 @@ import useEmblaCarousel from "embla-carousel-react";
 import { useCallback, useEffect, useState } from "react";
 import { optimizeImageUrl } from "@/lib/image-url";
 
-const TRUST_BADGES = [
-  { icon: Truck, label: "Free Delivery", sub: "Orders over 100 OMR" },
-  { icon: Shield, label: "Genuine Products", sub: "100% Authentic" },
-  { icon: RefreshCw, label: "Easy Returns", sub: "7-day return policy" },
-  { icon: Headphones, label: "Support", sub: "Sun–Thu, 9am–9pm" },
-];
-
 export default function Home() {
   const { data: banners } = useListBanners();
-  const { data: categories } = useListCategories();
   const { data: featuredProducts } = useGetFeaturedProducts();
   const { data: newArrivals } = useGetNewArrivals();
   const { data: mostDiscounted } = useGetMostDiscounted();
@@ -142,70 +129,6 @@ export default function Home() {
           )}
         </section>
       ) : null}
-
-      {/* ── Trust Badges ───────────────────────────────────────────── */}
-      <section className="border-b bg-card">
-        <div className="container mx-auto px-4 py-5">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {TRUST_BADGES.map(({ icon: Icon, label, sub }) => (
-              <div key={label} className="flex items-center gap-3 py-2">
-                <div className="shrink-0 rounded-xl bg-primary/10 p-2.5">
-                  <Icon className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-foreground leading-tight">{label}</p>
-                  <p className="text-xs text-muted-foreground">{sub}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Categories ─────────────────────────────────────────────── */}
-      {categories && categories.length > 0 && (
-        <section className="container mx-auto px-4 pt-12 pb-4">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-black text-foreground">Shop by Category</h2>
-            <Link
-              href="/categories"
-              className="text-sm font-semibold text-primary flex items-center gap-1 hover:gap-2 transition-all"
-            >
-              All categories <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
-            {categories.slice(0, 6).map((cat) => (
-              <Link
-                key={cat.id}
-                href={`/products?categoryId=${cat.id}`}
-                className="group flex flex-col items-center gap-2 p-4 rounded-2xl border bg-card hover:border-primary/40 hover:bg-primary/5 transition-all hover:shadow-sm"
-              >
-                {cat.imageUrl ? (
-                  <img
-                    src={optimizeImageUrl(cat.imageUrl, 96)}
-                    alt={cat.name}
-                    width={48}
-                    height={48}
-                    loading="lazy"
-                    decoding="async"
-                    className="h-12 w-12 object-contain rounded-lg group-hover:scale-110 transition-transform"
-                  />
-                ) : (
-                  <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <span className="text-lg font-black text-primary">
-                      {cat.name.charAt(0)}
-                    </span>
-                  </div>
-                )}
-                <span className="text-xs font-semibold text-center text-foreground leading-tight">
-                  {cat.name}
-                </span>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
 
       {/* ── Featured Products ──────────────────────────────────────── */}
       {featuredProducts && featuredProducts.length > 0 && (
