@@ -8,7 +8,6 @@ set -euo pipefail
 
 REPO_DIR="/var/www/gadgetsalalah"
 FRONTEND_DIST="$REPO_DIR/artifacts/shop/dist/public"
-NGINX_ROOT="/var/www/html/gadgetsalalah"   # nginx static root — adjust if different
 API_PM2_NAME="gadgetsalalah-api"
 
 # Keep the VPS/PM2 environment as the source of truth for PORT, DATABASE_URL,
@@ -63,13 +62,6 @@ else
   pm2 save
 fi
 
-# Copy frontend build to nginx static root (if using nginx for static files)
-if [ -d "$FRONTEND_DIST" ]; then
-  echo "→ Copying frontend build to nginx root..."
-  mkdir -p "$NGINX_ROOT"
-  cp -r "$FRONTEND_DIST/." "$NGINX_ROOT/"
-  echo "→ Frontend deployed to $NGINX_ROOT"
-fi
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
