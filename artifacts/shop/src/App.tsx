@@ -72,7 +72,7 @@ function PrivateRoute({ component: Component, ...rest }: any) {
 
 function AdminRoute({ component: Component, ...rest }: any) {
   const { user, isLoading } = useAuth();
-  if (isLoading) return null;
+  if (isLoading) return <RouteLoadingBar />;
   if (!user || user.role !== 'admin') return <Redirect to="/" />;
   return <Component {...rest} />;
 }
