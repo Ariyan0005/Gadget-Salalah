@@ -110,7 +110,7 @@ export function Header() {
                   <SheetTitle className="text-left">
                     <Link href="/" onClick={close} className="flex items-center rounded-md bg-white">
                         <img
-                          src="/gadget-salalah-logo.png"
+                          src="/gadgetsalalah-logo-clean.png"
                           alt="Gadget Salalah"
                           width="180"
                           height="90"
@@ -218,7 +218,7 @@ export function Header() {
             {/* Logo */}
             <Link href="/" className="flex items-center shrink-0 rounded-md bg-white">
                 <img
-                  src="/gadget-salalah-logo.png"
+                  src="/gadgetsalalah-logo-clean.png"
                   alt="Gadget Salalah"
                   width="190"
                   height="95"
