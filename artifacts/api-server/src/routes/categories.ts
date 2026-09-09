@@ -15,16 +15,21 @@ router.get("/categories", async (req, res) => {
       description: categoriesTable.description,
       imageUrl: categoriesTable.imageUrl,
       createdAt: categoriesTable.createdAt,
-    }).from(categoriesTable);
+      productCount: sql<number>`count(${productsTable.id})`,
+    })
+      .from(categoriesTable)
+      .leftJoin(productsTable, eq(productsTable.categoryId, categoriesTable.id))
+      .groupBy(
+        categoriesTable.id,
+        categoriesTable.name,
+        categoriesTable.slug,
+        categoriesTable.description,
+        categoriesTable.imageUrl,
+        categoriesTable.createdAt,
+      );
 
-    const withCount = await Promise.all(cats.map(async (cat) => {
-      const [{ count }] = await db.select({ count: sql<number>`count(*)` })
-        .from(productsTable)
-        .where(eq(productsTable.categoryId, cat.id));
-      return { ...cat, productCount: Number(count) };
-    }));
-
-    res.json(withCount);
+    res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
+    res.json(cats.map((cat) => ({ ...cat, productCount: Number(cat.productCount) })));
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Internal error" });

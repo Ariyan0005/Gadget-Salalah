@@ -32,15 +32,18 @@ function productWithCategory(p: Record<string, unknown>, catName?: string | null
 
 router.get("/products/featured", async (req, res) => {
   try {
-    const products = await db.select().from(productsTable)
+    const rows = await db.select({
+      product: productsTable,
+      categoryName: categoriesTable.name,
+    }).from(productsTable)
+      .leftJoin(categoriesTable, eq(categoriesTable.id, productsTable.categoryId))
       .where(and(eq(productsTable.isFeatured, true), eq(productsTable.isActive, true)))
       .orderBy(desc(productsTable.soldCount))
       .limit(12);
-    const withCats = await Promise.all(products.map(async (p) => {
-      const [cat] = await db.select({ name: categoriesTable.name }).from(categoriesTable).where(eq(categoriesTable.id, p.categoryId));
-      return productWithCategory(p as unknown as Record<string, unknown>, cat?.name);
-    }));
-    res.json(withCats);
+    res.set("Cache-Control", "public, max-age=30, stale-while-revalidate=120");
+    res.json(rows.map(({ product, categoryName }) =>
+      productWithCategory(product as unknown as Record<string, unknown>, categoryName),
+    ));
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Internal error" });
@@ -49,15 +52,18 @@ router.get("/products/featured", async (req, res) => {
 
 router.get("/products/new-arrivals", async (req, res) => {
   try {
-    const products = await db.select().from(productsTable)
+    const rows = await db.select({
+      product: productsTable,
+      categoryName: categoriesTable.name,
+    }).from(productsTable)
+      .leftJoin(categoriesTable, eq(categoriesTable.id, productsTable.categoryId))
       .where(eq(productsTable.isActive, true))
       .orderBy(desc(productsTable.createdAt))
       .limit(12);
-    const withCats = await Promise.all(products.map(async (p) => {
-      const [cat] = await db.select({ name: categoriesTable.name }).from(categoriesTable).where(eq(categoriesTable.id, p.categoryId));
-      return productWithCategory(p as unknown as Record<string, unknown>, cat?.name);
-    }));
-    res.json(withCats);
+    res.set("Cache-Control", "public, max-age=30, stale-while-revalidate=120");
+    res.json(rows.map(({ product, categoryName }) =>
+      productWithCategory(product as unknown as Record<string, unknown>, categoryName),
+    ));
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Internal error" });
@@ -66,15 +72,18 @@ router.get("/products/new-arrivals", async (req, res) => {
 
 router.get("/products/most-discounted", async (req, res) => {
   try {
-    const products = await db.select().from(productsTable)
+    const rows = await db.select({
+      product: productsTable,
+      categoryName: categoriesTable.name,
+    }).from(productsTable)
+      .leftJoin(categoriesTable, eq(categoriesTable.id, productsTable.categoryId))
       .where(and(eq(productsTable.isActive, true), sql`${productsTable.originalPrice} IS NOT NULL`))
       .orderBy(sql`(${productsTable.originalPrice}::numeric - ${productsTable.price}::numeric) / ${productsTable.originalPrice}::numeric DESC`)
       .limit(12);
-    const withCats = await Promise.all(products.map(async (p) => {
-      const [cat] = await db.select({ name: categoriesTable.name }).from(categoriesTable).where(eq(categoriesTable.id, p.categoryId));
-      return productWithCategory(p as unknown as Record<string, unknown>, cat?.name);
-    }));
-    res.json(withCats);
+    res.set("Cache-Control", "public, max-age=30, stale-while-revalidate=120");
+    res.json(rows.map(({ product, categoryName }) =>
+      productWithCategory(product as unknown as Record<string, unknown>, categoryName),
+    ));
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Internal error" });
@@ -109,7 +118,11 @@ router.get("/products", async (req, res) => {
     };
     const orderBy = orderMap[sortBy] ?? desc(productsTable.createdAt);
 
-    const products = await db.select().from(productsTable)
+    const products = await db.select({
+      product: productsTable,
+      categoryName: categoriesTable.name,
+    }).from(productsTable)
+      .leftJoin(categoriesTable, eq(categoriesTable.id, productsTable.categoryId))
       .where(and(...conditions))
       .orderBy(orderBy)
       .limit(limit).offset(offset);
@@ -117,11 +130,10 @@ router.get("/products", async (req, res) => {
     const [{ count }] = await db.select({ count: sql<number>`count(*)` })
       .from(productsTable).where(and(...conditions));
 
-    const withCats = await Promise.all(products.map(async (p) => {
-      const [cat] = await db.select({ name: categoriesTable.name }).from(categoriesTable).where(eq(categoriesTable.id, p.categoryId));
-      return productWithCategory(p as unknown as Record<string, unknown>, cat?.name);
-    }));
-
+    const withCats = products.map(({ product, categoryName }) =>
+      productWithCategory(product as unknown as Record<string, unknown>, categoryName),
+    );
+    res.set("Cache-Control", "public, max-age=15, stale-while-revalidate=60");
     res.json({ products: withCats, total: Number(count), page, limit });
   } catch (err) {
     req.log.error(err);
@@ -162,12 +174,20 @@ router.get("/products/:id", async (req, res) => {
   try {
     const param = req.params.id;
     const isNumeric = /^\d+$/.test(param);
-    const [product] = isNumeric
-      ? await db.select().from(productsTable).where(eq(productsTable.id, Number(param)))
-      : await db.select().from(productsTable).where(eq(productsTable.slug, param));
-    if (!product) { res.status(404).json({ error: "Not found" }); return; }
-    const [cat] = await db.select({ name: categoriesTable.name }).from(categoriesTable).where(eq(categoriesTable.id, product.categoryId));
-    res.json(productWithCategory(product as unknown as Record<string, unknown>, cat?.name));
+    const [row] = await db.select({
+      product: productsTable,
+      categoryName: categoriesTable.name,
+    }).from(productsTable)
+      .leftJoin(categoriesTable, eq(categoriesTable.id, productsTable.categoryId))
+      .where(isNumeric
+        ? eq(productsTable.id, Number(param))
+        : eq(productsTable.slug, param));
+    if (!row) { res.status(404).json({ error: "Not found" }); return; }
+    res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
+    res.json(productWithCategory(
+      row.product as unknown as Record<string, unknown>,
+      row.categoryName,
+    ));
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Internal error" });

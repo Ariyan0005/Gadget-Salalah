@@ -65,12 +65,17 @@ export default function Home() {
         <section className="w-full bg-slate-950 relative group">
           <div className="overflow-hidden w-full" ref={emblaRef}>
             <div className="flex">
-              {activeBanners.map((banner) => (
+              {activeBanners.map((banner, index) => (
                 <div key={banner.id} className="relative min-w-full flex-none">
                   <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/40 to-transparent z-10" />
                   <img
                     src={banner.imageUrl}
                     alt={banner.title}
+                    width={1920}
+                    height={520}
+                    loading={index === 0 ? "eager" : "lazy"}
+                    fetchPriority={index === 0 ? "high" : "auto"}
+                    decoding="async"
                     className="h-[280px] sm:h-[380px] lg:h-[520px] w-full object-cover"
                   />
                   <div className="absolute inset-0 z-20 flex items-center md:px-20 px-6">
@@ -220,6 +225,10 @@ export default function Home() {
                   <img
                     src={cat.imageUrl}
                     alt={cat.name}
+                    width={48}
+                    height={48}
+                    loading="lazy"
+                    decoding="async"
                     className="h-12 w-12 object-contain rounded-lg group-hover:scale-110 transition-transform"
                   />
                 ) : (
