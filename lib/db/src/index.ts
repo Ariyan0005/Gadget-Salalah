@@ -22,6 +22,9 @@ const connectionString = isSupabase
 export const pool = new Pool({
   connectionString,
   ssl: isSupabase ? { rejectUnauthorized: false } : false,
+  max: 25,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000,
 });
 export const db = drizzle(pool, { schema });
 

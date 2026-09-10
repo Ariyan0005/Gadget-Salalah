@@ -1,3 +1,4 @@
+import { memoryCache } from "../lib/cache";
 import { Router } from "express";
 import { db, productsTable, categoriesTable, productVariantsTable, insertProductVariantSchema } from "@workspace/db";
 import { eq, ilike, and, gte, lte, desc, asc, sql } from "drizzle-orm";
@@ -32,6 +33,13 @@ function productWithCategory(p: Record<string, unknown>, catName?: string | null
 
 router.get("/products/featured", async (req, res) => {
   try {
+    const cached = memoryCache.get<any[]>("products:featured");
+    if (cached) {
+      res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
+      res.json(cached);
+      return;
+    }
+
     const rows = await db.select({
       product: productsTable,
       categoryName: categoriesTable.name,
@@ -40,10 +48,12 @@ router.get("/products/featured", async (req, res) => {
       .where(and(eq(productsTable.isFeatured, true), eq(productsTable.isActive, true)))
       .orderBy(desc(productsTable.soldCount))
       .limit(12);
-    res.set("Cache-Control", "public, max-age=30, stale-while-revalidate=120");
-    res.json(rows.map(({ product, categoryName }) =>
+    const result = rows.map(({ product, categoryName }) =>
       productWithCategory(product as unknown as Record<string, unknown>, categoryName),
-    ));
+    );
+    memoryCache.set("products:featured", result, 60);
+    res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
+    res.json(result);
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Internal error" });
@@ -52,6 +62,13 @@ router.get("/products/featured", async (req, res) => {
 
 router.get("/products/new-arrivals", async (req, res) => {
   try {
+    const cached = memoryCache.get<any[]>("products:new-arrivals");
+    if (cached) {
+      res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
+      res.json(cached);
+      return;
+    }
+
     const rows = await db.select({
       product: productsTable,
       categoryName: categoriesTable.name,
@@ -60,10 +77,12 @@ router.get("/products/new-arrivals", async (req, res) => {
       .where(eq(productsTable.isActive, true))
       .orderBy(desc(productsTable.createdAt))
       .limit(12);
-    res.set("Cache-Control", "public, max-age=30, stale-while-revalidate=120");
-    res.json(rows.map(({ product, categoryName }) =>
+    const result = rows.map(({ product, categoryName }) =>
       productWithCategory(product as unknown as Record<string, unknown>, categoryName),
-    ));
+    );
+    memoryCache.set("products:new-arrivals", result, 60);
+    res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
+    res.json(result);
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Internal error" });
@@ -72,6 +91,13 @@ router.get("/products/new-arrivals", async (req, res) => {
 
 router.get("/products/most-discounted", async (req, res) => {
   try {
+    const cached = memoryCache.get<any[]>("products:most-discounted");
+    if (cached) {
+      res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
+      res.json(cached);
+      return;
+    }
+
     const rows = await db.select({
       product: productsTable,
       categoryName: categoriesTable.name,
@@ -80,10 +106,12 @@ router.get("/products/most-discounted", async (req, res) => {
       .where(and(eq(productsTable.isActive, true), sql`${productsTable.originalPrice} IS NOT NULL`))
       .orderBy(sql`(${productsTable.originalPrice}::numeric - ${productsTable.price}::numeric) / ${productsTable.originalPrice}::numeric DESC`)
       .limit(12);
-    res.set("Cache-Control", "public, max-age=30, stale-while-revalidate=120");
-    res.json(rows.map(({ product, categoryName }) =>
+    const result = rows.map(({ product, categoryName }) =>
       productWithCategory(product as unknown as Record<string, unknown>, categoryName),
-    ));
+    );
+    memoryCache.set("products:most-discounted", result, 60);
+    res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
+    res.json(result);
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Internal error" });
@@ -163,7 +191,7 @@ router.post("/products", authenticate, requireAdmin, async (req: AuthRequest, re
       originalPrice: body.originalPrice != null ? String(body.originalPrice) : undefined,
     }).returning();
     const [cat] = await db.select({ name: categoriesTable.name }).from(categoriesTable).where(eq(categoriesTable.id, product.categoryId));
-    res.status(201).json(productWithCategory(product as unknown as Record<string, unknown>, cat?.name));
+    memoryCache.delete(/^products?:/); res.status(201).json(productWithCategory(product as unknown as Record<string, unknown>, cat?.name));
   } catch (err) {
     req.log.error(err);
     res.status(400).json({ error: "Create failed" });
@@ -217,7 +245,7 @@ router.patch("/products/:id", authenticate, requireAdmin, async (req: AuthReques
     }
     const [product] = await db.update(productsTable).set(updateData).where(eq(productsTable.id, id)).returning();
     const [cat] = await db.select({ name: categoriesTable.name }).from(categoriesTable).where(eq(categoriesTable.id, product.categoryId));
-    res.json(productWithCategory(product as unknown as Record<string, unknown>, cat?.name));
+    memoryCache.delete(/^products?:/); res.json(productWithCategory(product as unknown as Record<string, unknown>, cat?.name));
   } catch (err) {
     req.log.error(err);
     res.status(400).json({ error: "Update failed" });
@@ -228,7 +256,7 @@ router.delete("/products/:id", authenticate, requireAdmin, async (req: AuthReque
   try {
     const id = Number(req.params.id);
     await db.delete(productsTable).where(eq(productsTable.id, id));
-    res.json({ message: "Product deleted" });
+    memoryCache.delete(/^products?:/); res.json({ message: "Product deleted" });
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Internal error" });
@@ -248,7 +276,7 @@ router.patch("/products/:id/stock", authenticate, requireAdmin, async (req: Auth
 
     const [product] = await db.update(productsTable).set({ stock: newStock }).where(eq(productsTable.id, id)).returning();
     const [cat] = await db.select({ name: categoriesTable.name }).from(categoriesTable).where(eq(categoriesTable.id, product.categoryId));
-    res.json(productWithCategory(product as unknown as Record<string, unknown>, cat?.name));
+    memoryCache.delete(/^products?:/); res.json(productWithCategory(product as unknown as Record<string, unknown>, cat?.name));
   } catch (err) {
     req.log.error(err);
     res.status(400).json({ error: "Stock update failed" });
@@ -291,7 +319,7 @@ router.post("/products/:id/variants", authenticate, requireAdmin, async (req: Au
     const [variant] = await db.insert(productVariantsTable).values({
       productId, name: name as string, value: value as string, priceModifier: String(pm), stock: st, sku: (typeof sku === "string" && sku) ? sku : null, isDefault: def,
     }).returning();
-    res.status(201).json({ ...variant, priceModifier: Number(variant.priceModifier) });
+    memoryCache.delete(/^products?:/); res.status(201).json({ ...variant, priceModifier: Number(variant.priceModifier) });
   } catch (err) {
     req.log.error(err);
     res.status(400).json({ error: "Create variant failed" });
@@ -333,7 +361,7 @@ router.delete("/products/:id/variants/:variantId", authenticate, requireAdmin, a
     const variantId = Number(req.params.variantId);
     await db.delete(productVariantsTable)
       .where(and(eq(productVariantsTable.id, variantId), eq(productVariantsTable.productId, productId)));
-    res.json({ message: "Variant deleted" });
+    memoryCache.delete(/^products?:/); res.json({ message: "Variant deleted" });
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Delete variant failed" });

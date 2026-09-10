@@ -15,12 +15,12 @@ export function Footer() {
 
           {/* Brand */}
           <div className="space-y-4">
-            <Link href="/" className="inline-flex items-center rounded-lg bg-white px-3 py-2 shadow-sm">
+            <Link href="/" className="inline-flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded">
               <img
-                src="/gadget-salalah-logo.webp"
+                src="/gadget-salalah-logo-light.webp"
                 alt="Gadget Salalah"
                 width="190"
-                height="67"
+                height="63"
                 className="h-10 w-[190px] object-contain object-left"
               />
             </Link>

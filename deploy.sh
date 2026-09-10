@@ -45,8 +45,17 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo "  ✅ Build complete — Restarting services"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-# Restart API server with PM2
-if pm2 list | grep -q "$API_PM2_NAME"; then
+# Restart API server with PM2 in Cluster Mode for multi-core load balancing
+if [ -f "$REPO_DIR/ecosystem.config.cjs" ]; then
+  if pm2 list | grep -q "$API_PM2_NAME"; then
+    echo "→ Zero-downtime reload of PM2 cluster: $API_PM2_NAME"
+    pm2 reload "$REPO_DIR/ecosystem.config.cjs" --update-env
+  else
+    echo "→ Starting PM2 cluster mode (all CPU cores): $API_PM2_NAME"
+    pm2 start "$REPO_DIR/ecosystem.config.cjs"
+    pm2 save
+  fi
+elif pm2 list | grep -q "$API_PM2_NAME"; then
   echo "→ Restarting PM2 process: $API_PM2_NAME"
   pm2 restart "$API_PM2_NAME"
 else
@@ -57,7 +66,7 @@ else
   echo "→ Starting new PM2 process: $API_PM2_NAME"
   pm2 start "$REPO_DIR/artifacts/api-server/dist/index.mjs" \
     --name "$API_PM2_NAME" \
-    --interpreter node \
+    -i max \
     --env production
   pm2 save
 fi
