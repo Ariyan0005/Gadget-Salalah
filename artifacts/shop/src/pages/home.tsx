@@ -51,7 +51,8 @@ export default function Home() {
       {/* ── Hero Slider ────────────────────────────────────────────── */}
       <section className="w-full bg-slate-950 relative group min-h-[280px] sm:min-h-[380px] lg:min-h-[520px]">
         {activeBanners.length > 0 ? (
-          <div className="overflow-hidden w-full" ref={emblaRef}>
+          <>
+            <div className="overflow-hidden w-full" ref={emblaRef}>
             <div className="flex">
               {activeBanners.map((banner, index) => (
                 <div key={banner.id} className="relative min-w-full flex-none">
@@ -134,7 +135,7 @@ export default function Home() {
               </div>
             </>
           )}
-        </div>
+          </>
         ) : (
           <div className="h-[280px] sm:h-[380px] lg:h-[520px] w-full bg-slate-900/60 animate-pulse" />
         )}
