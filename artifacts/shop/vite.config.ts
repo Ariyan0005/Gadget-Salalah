@@ -42,6 +42,17 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    cssCodeSplit: true,
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "vendor-react": ["react", "react-dom", "wouter", "@tanstack/react-query"],
+          "vendor-charts": ["recharts"],
+          "vendor-carousel": ["embla-carousel-react"],
+        },
+      },
+    },
   },
   server: {
     port,

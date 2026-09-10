@@ -17,7 +17,7 @@ export function Footer() {
           <div className="space-y-4">
             <Link href="/" className="inline-flex items-center rounded-lg bg-white px-3 py-2 shadow-sm">
               <img
-                src="/gadget-salalah-logo.png"
+                src="/gadget-salalah-logo.webp"
                 alt="Gadget Salalah"
                 width="190"
                 height="67"

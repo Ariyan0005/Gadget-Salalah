@@ -1,47 +1,52 @@
+import { lazy, Suspense } from "react";
 import { Switch, Route, Router as WouterRouter, Redirect, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import NotFound from "@/pages/not-found";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { LanguageProvider } from "./context/LanguageContext";
 import { setAuthTokenGetter } from "@workspace/api-client-react";
 import { DEFAULT_DESCRIPTION, DEFAULT_TITLE, useSeo } from "./lib/seo";
 
+// Eager load Home for instantaneous First Contentful Paint
 import Home from "./pages/home";
-import Products from "./pages/products/index";
-import ProductDetail from "./pages/products/[id]";
-import Categories from "./pages/categories";
-import Cart from "./pages/cart";
-import Checkout from "./pages/checkout";
-import OrdersList from "./pages/orders/index";
-import OrderDetail from "./pages/orders/[id]";
-import TrackOrder from "./pages/track";
-import AuthPage from "./pages/auth";
-import About from "./pages/about";
-import Contact from "./pages/contact";
-import MobileService from "./pages/mobile-service";
-import SpareParts from "./pages/spare-parts";
-import ReturnPolicy from "./pages/return-policy";
-import AccountPage from "./pages/account";
-import SettingsPage from "./pages/settings";
-import AdminDashboard from "./pages/admin/index";
-import AdminProducts from "./pages/admin/products";
-import AdminCategories from "./pages/admin/categories";
-import AdminOrders from "./pages/admin/orders";
-import AdminUsers from "./pages/admin/users";
-import AdminBanners from "./pages/admin/banners";
-import AdminSetup from "./pages/admin/setup";
+
+// Lazy load non-critical routes
+const Products = lazy(() => import("./pages/products/index"));
+const ProductDetail = lazy(() => import("./pages/products/[id]"));
+const Categories = lazy(() => import("./pages/categories"));
+const Cart = lazy(() => import("./pages/cart"));
+const Checkout = lazy(() => import("./pages/checkout"));
+const OrdersList = lazy(() => import("./pages/orders/index"));
+const OrderDetail = lazy(() => import("./pages/orders/[id]"));
+const TrackOrder = lazy(() => import("./pages/track"));
+const AuthPage = lazy(() => import("./pages/auth"));
+const About = lazy(() => import("./pages/about"));
+const Contact = lazy(() => import("./pages/contact"));
+const MobileService = lazy(() => import("./pages/mobile-service"));
+const SpareParts = lazy(() => import("./pages/spare-parts"));
+const ReturnPolicy = lazy(() => import("./pages/return-policy"));
+const AccountPage = lazy(() => import("./pages/account"));
+const SettingsPage = lazy(() => import("./pages/settings"));
+const NotFound = lazy(() => import("@/pages/not-found"));
+
+// Lazy load heavy admin routes and chart visualization modules
+const AdminDashboard = lazy(() => import("./pages/admin/index"));
+const AdminProducts = lazy(() => import("./pages/admin/products"));
+const AdminCategories = lazy(() => import("./pages/admin/categories"));
+const AdminOrders = lazy(() => import("./pages/admin/orders"));
+const AdminUsers = lazy(() => import("./pages/admin/users"));
+const AdminBanners = lazy(() => import("./pages/admin/banners"));
+const AdminSetup = lazy(() => import("./pages/admin/setup"));
 
 setAuthTokenGetter(() => localStorage.getItem("token"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Avoid making a broken API proxy feel like a long page load.
       retry: 1,
       retryDelay: (attempt) => Math.min(500 * 2 ** attempt, 2000),
-      staleTime: 30_000,
+      staleTime: 60_000,
       refetchOnWindowFocus: false,
     },
   },
@@ -73,7 +78,7 @@ function PrivateRoute({ component: Component, ...rest }: any) {
 function AdminRoute({ component: Component, ...rest }: any) {
   const { user, isLoading } = useAuth();
   if (isLoading) return <RouteLoadingBar />;
-  if (!user || user.role !== 'admin') return <Redirect to="/" />;
+  if (!user || user.role !== "admin") return <Redirect to="/" />;
   return <Component {...rest} />;
 }
 
@@ -84,7 +89,17 @@ function Router() {
   const isPrivate = /^\/(account|settings|orders|admin)(\/|$)/.test(path);
   const isNoindexUtility = /^\/(cart|checkout)(\/|$)/.test(path);
   const isAuth = path === "/login" || path === "/register";
-  const isKnownPublic = ["/", "/products", "/categories", "/track", "/about", "/contact", "/mobile-service", "/spare-parts", "/return-policy"].includes(path);
+  const isKnownPublic = [
+    "/",
+    "/products",
+    "/categories",
+    "/track",
+    "/about",
+    "/contact",
+    "/mobile-service",
+    "/spare-parts",
+    "/return-policy",
+  ].includes(path);
 
   useSeo({
     title:
@@ -102,19 +117,20 @@ function Router() {
                   ? "Mobile Repair & Service in Salalah | Gadget Salalah"
                   : path === "/spare-parts"
                     ? "Mobile Spare Parts in Salalah | Gadget Salalah"
-                     : path === "/return-policy"
-                       ? "Return Policy | Gadget Salalah"
-                    : path === "/track"
-                      ? "Track Your Order | Gadget Salalah"
-                         : isPrivate || isNoindexUtility || isAuth
-                        ? "Gadget Salalah Account"
-                        : DEFAULT_TITLE,
+                    : path === "/return-policy"
+                      ? "Return Policy | Gadget Salalah"
+                      : path === "/track"
+                        ? "Track Your Order | Gadget Salalah"
+                        : isPrivate || isNoindexUtility || isAuth
+                          ? "Gadget Salalah Account"
+                          : DEFAULT_TITLE,
     description: DEFAULT_DESCRIPTION,
     path: isKnownPublic ? path : "/",
-     noindex: isPrivate || isNoindexUtility || isAuth || (path === "/products" && hasQuery) || !isKnownPublic,
+    noindex: isPrivate || isNoindexUtility || isAuth || (path === "/products" && hasQuery) || !isKnownPublic,
   });
 
   return (
+    <Suspense fallback={<RouteLoadingBar />}>
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/products" component={Products} />
@@ -126,20 +142,16 @@ function Router() {
         <Route path="/mobile-service" component={MobileService} />
         <Route path="/spare-parts" component={SpareParts} />
         <Route path="/return-policy" component={ReturnPolicy} />
-
         <Route path="/login"><AuthPage isLogin={true} /></Route>
         <Route path="/register"><AuthPage isLogin={false} /></Route>
-
         <Route path="/account"><PrivateRoute component={AccountPage} /></Route>
         <Route path="/settings"><PrivateRoute component={SettingsPage} /></Route>
         <Route path="/cart" component={Cart} />
         <Route path="/checkout" component={Checkout} />
         <Route path="/orders"><PrivateRoute component={OrdersList} /></Route>
         <Route path="/orders/:id"><PrivateRoute component={OrderDetail} /></Route>
-
         {/* First-time setup — public, auto-locks after first admin */}
         <Route path="/admin/setup" component={AdminSetup} />
-
         {/* Admin Routes */}
         <Route path="/admin"><AdminRoute component={AdminDashboard} /></Route>
         <Route path="/admin/products"><AdminRoute component={AdminProducts} /></Route>
@@ -147,14 +159,13 @@ function Router() {
         <Route path="/admin/orders"><AdminRoute component={AdminOrders} /></Route>
         <Route path="/admin/users"><AdminRoute component={AdminUsers} /></Route>
         <Route path="/admin/banners"><AdminRoute component={AdminBanners} /></Route>
-
         <Route component={NotFound} />
       </Switch>
-
+    </Suspense>
   );
 }
 
-function App() {
+export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -170,5 +181,3 @@ function App() {
     </QueryClientProvider>
   );
 }
-
-export default App;

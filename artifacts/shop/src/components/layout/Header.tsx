@@ -146,7 +146,7 @@ export function Header() {
                   <div className="flex items-center gap-3">
                     <Link href="/" onClick={close} className="flex min-w-0 flex-1 items-center">
                       <img
-                        src="/gadget-salalah-logo.png"
+                        src="/gadget-salalah-logo.webp"
                         alt="Gadget Salalah"
                         width="150"
                         height="70"
@@ -345,7 +345,7 @@ export function Header() {
             {/* Logo */}
             <Link href="/" data-testid="link-header-logo" className="flex items-center shrink-0 rounded-md bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 <img
-                  src="/gadget-salalah-logo.png"
+                  src="/gadget-salalah-logo.webp"
                   alt="Gadget Salalah"
                   width="190"
                   height="95"

@@ -49,17 +49,24 @@ export default function Home() {
   return (
     <AppLayout>
       {/* ── Hero Slider ────────────────────────────────────────────── */}
-      {activeBanners.length > 0 ? (
-        <section className="w-full bg-slate-950 relative group">
+      <section className="w-full bg-slate-950 relative group min-h-[280px] sm:min-h-[380px] lg:min-h-[520px]">
+        {activeBanners.length > 0 ? (
           <div className="overflow-hidden w-full" ref={emblaRef}>
             <div className="flex">
               {activeBanners.map((banner, index) => (
                 <div key={banner.id} className="relative min-w-full flex-none">
                   <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/40 to-transparent z-10" />
                   <img
-                    src={optimizeImageUrl(banner.imageUrl, 1920, "fill")}
+                    src={optimizeImageUrl(banner.imageUrl, 1200, "fill")}
+                    srcSet={`
+                      ${optimizeImageUrl(banner.imageUrl, 480, "fill")} 480w,
+                      ${optimizeImageUrl(banner.imageUrl, 768, "fill")} 768w,
+                      ${optimizeImageUrl(banner.imageUrl, 1200, "fill")} 1200w,
+                      ${optimizeImageUrl(banner.imageUrl, 1920, "fill")} 1920w
+                    `}
+                    sizes="100vw"
                     alt={banner.title}
-                    width={1920}
+                    width={1200}
                     height={520}
                     loading={index === 0 ? "eager" : "lazy"}
                     fetchPriority={index === 0 ? "high" : "auto"}
@@ -127,8 +134,11 @@ export default function Home() {
               </div>
             </>
           )}
-        </section>
-      ) : null}
+        </div>
+        ) : (
+          <div className="h-[280px] sm:h-[380px] lg:h-[520px] w-full bg-slate-900/60 animate-pulse" />
+        )}
+      </section>
 
       {/* ── Featured Products ──────────────────────────────────────── */}
       {featuredProducts && featuredProducts.length > 0 && (
