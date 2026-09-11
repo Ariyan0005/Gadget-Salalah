@@ -24,9 +24,12 @@ import { optimizeImageUrl } from "@/lib/image-url";
 
 export default function ProductDetail() {
   const [, params] = useRoute("/products/:id");
-  const slug = params?.id ?? "";          // may be "samsung-s26-ultra" or "42"
+  const slug = params?.id ?? "";
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const { user } = useAuth();
 
-  // Fetch by slug (or numeric id) — backend accepts both
+  // Fetch by slug (or numeric id) — seeded instantly from queryClient cache
   const { data: product, isLoading, isError } = useQuery<Product>({
     queryKey: [`/api/products/${slug}`],
     queryFn: async ({ signal }) => {
@@ -38,11 +41,26 @@ export default function ProductDetail() {
       if (!res.ok) throw new Error("Product not found");
       return res.json();
     },
+    initialData: () => {
+      const direct = queryClient.getQueryData<Product>([`/api/products/${slug}`]);
+      if (direct) return direct;
+      const queries = queryClient.getQueryCache().findAll();
+      for (const q of queries) {
+        const d: any = q.state.data;
+        if (Array.isArray(d)) {
+          const found = d.find((p: any) => p && (p.slug === slug || String(p.id) === slug));
+          if (found) return found;
+        } else if (d && typeof d === "object" && "products" in d && Array.isArray(d.products)) {
+          const found = d.products.find((p: any) => p && (p.slug === slug || String(p.id) === slug));
+          if (found) return found;
+        }
+      }
+      return undefined;
+    },
+    staleTime: 5 * 60 * 1000,
     enabled: !!slug,
-      retry: false,
+    retry: false,
   });
-
-  // Once we have the product, load variants by numeric id
   const productId = product?.id ?? 0;
   const { data: variants = [] } = useListProductVariants(productId, {
     query: {
@@ -54,9 +72,6 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, number>>({});
   const addToCartMutation = useAddToCart();
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-  const { user } = useAuth();
 
   // Product-specific SEO and structured data.
   useEffect(() => {

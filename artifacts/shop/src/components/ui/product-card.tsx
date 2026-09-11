@@ -3,7 +3,7 @@ import { Product } from "@workspace/api-client-react";
 import { formatPrice } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useAddToCart, getGetCartQueryKey } from "@workspace/api-client-react";
+import { useAddToCart, getGetCartQueryKey, getListProductVariantsQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { ShoppingCart, Star } from "lucide-react";
@@ -11,11 +11,46 @@ import { useAuth } from "@/context/AuthContext";
 import { addGuestProduct } from "@/lib/guest-cart";
 import { optimizeImageUrl } from "@/lib/image-url";
 
+export function ProductCardSkeleton() {
+  return (
+    <div className="flex flex-col overflow-hidden rounded-2xl bg-white border border-border/60 shadow-sm dark:bg-card">
+      <div className="relative aspect-square overflow-hidden bg-slate-100 dark:bg-muted animate-pulse" />
+      <div className="flex flex-col flex-1 p-3 gap-2">
+        <div className="h-2.5 w-16 bg-slate-200 dark:bg-muted rounded animate-pulse" />
+        <div className="h-4 w-full bg-slate-200 dark:bg-muted rounded animate-pulse" />
+        <div className="h-3 w-20 bg-slate-200 dark:bg-muted rounded animate-pulse mt-1" />
+        <div className="h-5 w-16 bg-slate-200 dark:bg-muted rounded animate-pulse mt-auto pt-2" />
+      </div>
+    </div>
+  );
+}
+
 export function ProductCard({ product, priority = false }: { product: Product; priority?: boolean }) {
   const addToCartMutation = useAddToCart();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
+
+  const prefetchProduct = () => {
+    // 1. Seed TanStack Query cache with product data so navigation is instant (0ms)
+    if (product.slug) {
+      queryClient.setQueryData([`/api/products/${product.slug}`], product);
+    }
+    if (product.id) {
+      queryClient.setQueryData([`/api/products/${product.id}`], product);
+      // 2. Prefetch variants in background
+      queryClient.prefetchQuery({
+        queryKey: getListProductVariantsQueryKey(product.id),
+        queryFn: async () => {
+          const res = await fetch(`/api/products/${product.id}/variants`);
+          return res.json();
+        },
+        staleTime: 5 * 60 * 1000,
+      });
+    }
+    // 3. Preload the product detail page chunk
+    import("@/pages/products/[id]");
+  };
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -47,6 +82,8 @@ export function ProductCard({ product, priority = false }: { product: Product; p
   return (
     <Link
       href={`/products/${product.slug || product.id}`}
+      onMouseEnter={prefetchProduct}
+      onTouchStart={prefetchProduct}
       className="group relative flex flex-col overflow-hidden rounded-2xl bg-white border border-border/60 shadow-sm hover:shadow-md hover:border-primary/20 transition-shadow duration-200 dark:bg-card"
     >
       {/* Image */}
@@ -90,8 +127,8 @@ export function ProductCard({ product, priority = false }: { product: Product; p
           <div className="absolute bottom-0 left-0 right-0 md:translate-y-full md:group-hover:translate-y-0 transition-transform duration-200">
             <Button
               className="w-full rounded-none rounded-b-none h-10 text-xs font-semibold bg-primary hover:bg-primary/90 gap-2"
-              onClick={handleAddToCart}
-               disabled={user ? addToCartMutation.isPending : false}
+              onClick={handleAddToCart} 
+              disabled={user ? addToCartMutation.isPending : false}
               data-testid={`btn-add-to-cart-${product.id}`}
             >
               <ShoppingCart className="h-3.5 w-3.5" />

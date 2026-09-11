@@ -1,7 +1,7 @@
 import { useState, useEffect, type FormEvent } from "react";
 import { Link, useLocation } from "wouter";
 import { useListProducts, useListCategories } from "@workspace/api-client-react";
-import { ProductCard } from "@/components/ui/product-card";
+import { ProductCard, ProductCardSkeleton } from "@/components/ui/product-card";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -194,11 +194,7 @@ export default function Products() {
             {isLoading ? (
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
                 {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
-                  <div key={i} className="rounded-xl border bg-card p-4">
-                    <div className="mb-4 aspect-square rounded-lg bg-muted animate-pulse" />
-                    <div className="h-4 w-2/3 bg-muted rounded animate-pulse mb-2" />
-                    <div className="h-4 w-1/2 bg-muted rounded animate-pulse" />
-                  </div>
+                  <ProductCardSkeleton key={i} />
                 ))}
               </div>
             ) : productsData?.products.length === 0 ? (

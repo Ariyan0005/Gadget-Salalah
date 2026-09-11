@@ -130,6 +130,14 @@ router.get("/products", async (req, res) => {
     const sortBy = (req.query.sortBy as string) || "newest";
     const featured = req.query.featured === "true";
 
+    const cacheKey = `products:list:${page}:${limit}:${search || ""}:${categoryId || ""}:${minPrice ?? ""}:${maxPrice ?? ""}:${sortBy}:${featured}`;
+    const cached = memoryCache.get<any>(cacheKey);
+    if (cached) {
+      res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
+      res.json(cached);
+      return;
+    }
+
     const conditions = [eq(productsTable.isActive, true)];
     if (search) conditions.push(ilike(productsTable.name, `%${search}%`));
     if (categoryId) conditions.push(eq(productsTable.categoryId, categoryId));
@@ -161,8 +169,10 @@ router.get("/products", async (req, res) => {
     const withCats = products.map(({ product, categoryName }) =>
       productWithCategory(product as unknown as Record<string, unknown>, categoryName),
     );
-    res.set("Cache-Control", "public, max-age=15, stale-while-revalidate=60");
-    res.json({ products: withCats, total: Number(count), page, limit });
+    const responseData = { products: withCats, total: Number(count), page, limit };
+    memoryCache.set(cacheKey, responseData, 60);
+    res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
+    res.json(responseData);
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Internal error" });
@@ -191,7 +201,7 @@ router.post("/products", authenticate, requireAdmin, async (req: AuthRequest, re
       originalPrice: body.originalPrice != null ? String(body.originalPrice) : undefined,
     }).returning();
     const [cat] = await db.select({ name: categoriesTable.name }).from(categoriesTable).where(eq(categoriesTable.id, product.categoryId));
-    memoryCache.delete(/^products?:/); res.status(201).json(productWithCategory(product as unknown as Record<string, unknown>, cat?.name));
+    memoryCache.delete(/^products?:/); memoryCache.delete(/^variants:/); res.status(201).json(productWithCategory(product as unknown as Record<string, unknown>, cat?.name));
   } catch (err) {
     req.log.error(err);
     res.status(400).json({ error: "Create failed" });
@@ -201,6 +211,13 @@ router.post("/products", authenticate, requireAdmin, async (req: AuthRequest, re
 router.get("/products/:id", async (req, res) => {
   try {
     const param = req.params.id;
+    const cacheKey = `product:${param}`;
+    const cached = memoryCache.get<any>(cacheKey);
+    if (cached) {
+      res.set("Cache-Control", "public, max-age=120, stale-while-revalidate=600");
+      res.json(cached);
+      return;
+    }
     const isNumeric = /^\d+$/.test(param);
     const [row] = await db.select({
       product: productsTable,
@@ -211,11 +228,19 @@ router.get("/products/:id", async (req, res) => {
         ? eq(productsTable.id, Number(param))
         : eq(productsTable.slug, param));
     if (!row) { res.status(404).json({ error: "Not found" }); return; }
-    res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
-    res.json(productWithCategory(
+    const result = productWithCategory(
       row.product as unknown as Record<string, unknown>,
       row.categoryName,
-    ));
+    );
+    memoryCache.set(cacheKey, result, 120);
+    if (row.product.slug && row.product.slug !== param) {
+      memoryCache.set(`product:${row.product.slug}`, result, 120);
+    }
+    if (row.product.id && String(row.product.id) !== param) {
+      memoryCache.set(`product:${row.product.id}`, result, 120);
+    }
+    res.set("Cache-Control", "public, max-age=120, stale-while-revalidate=600");
+    res.json(result);
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Internal error" });
@@ -245,7 +270,7 @@ router.patch("/products/:id", authenticate, requireAdmin, async (req: AuthReques
     }
     const [product] = await db.update(productsTable).set(updateData).where(eq(productsTable.id, id)).returning();
     const [cat] = await db.select({ name: categoriesTable.name }).from(categoriesTable).where(eq(categoriesTable.id, product.categoryId));
-    memoryCache.delete(/^products?:/); res.json(productWithCategory(product as unknown as Record<string, unknown>, cat?.name));
+    memoryCache.delete(/^products?:/); memoryCache.delete(/^variants:/); res.json(productWithCategory(product as unknown as Record<string, unknown>, cat?.name));
   } catch (err) {
     req.log.error(err);
     res.status(400).json({ error: "Update failed" });
@@ -256,7 +281,7 @@ router.delete("/products/:id", authenticate, requireAdmin, async (req: AuthReque
   try {
     const id = Number(req.params.id);
     await db.delete(productsTable).where(eq(productsTable.id, id));
-    memoryCache.delete(/^products?:/); res.json({ message: "Product deleted" });
+    memoryCache.delete(/^products?:/); memoryCache.delete(/^variants:/); res.json({ message: "Product deleted" });
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Internal error" });
@@ -276,7 +301,7 @@ router.patch("/products/:id/stock", authenticate, requireAdmin, async (req: Auth
 
     const [product] = await db.update(productsTable).set({ stock: newStock }).where(eq(productsTable.id, id)).returning();
     const [cat] = await db.select({ name: categoriesTable.name }).from(categoriesTable).where(eq(categoriesTable.id, product.categoryId));
-    memoryCache.delete(/^products?:/); res.json(productWithCategory(product as unknown as Record<string, unknown>, cat?.name));
+    memoryCache.delete(/^products?:/); memoryCache.delete(/^variants:/); res.json(productWithCategory(product as unknown as Record<string, unknown>, cat?.name));
   } catch (err) {
     req.log.error(err);
     res.status(400).json({ error: "Stock update failed" });
@@ -289,13 +314,23 @@ router.patch("/products/:id/stock", authenticate, requireAdmin, async (req: Auth
 router.get("/products/:id/variants", async (req, res) => {
   try {
     const productId = Number(req.params.id);
+    const cacheKey = `variants:${productId}`;
+    const cached = memoryCache.get<any[]>(cacheKey);
+    if (cached) {
+      res.set("Cache-Control", "public, max-age=180, stale-while-revalidate=600");
+      res.json(cached);
+      return;
+    }
     const variants = await db.select().from(productVariantsTable)
       .where(eq(productVariantsTable.productId, productId))
       .orderBy(productVariantsTable.isDefault, productVariantsTable.id);
-    res.json(variants.map(v => ({
+    const result = variants.map(v => ({
       ...v,
       priceModifier: Number(v.priceModifier),
-    })));
+    }));
+    memoryCache.set(cacheKey, result, 180);
+    res.set("Cache-Control", "public, max-age=180, stale-while-revalidate=600");
+    res.json(result);
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Internal error" });
@@ -319,7 +354,7 @@ router.post("/products/:id/variants", authenticate, requireAdmin, async (req: Au
     const [variant] = await db.insert(productVariantsTable).values({
       productId, name: name as string, value: value as string, priceModifier: String(pm), stock: st, sku: (typeof sku === "string" && sku) ? sku : null, isDefault: def,
     }).returning();
-    memoryCache.delete(/^products?:/); res.status(201).json({ ...variant, priceModifier: Number(variant.priceModifier) });
+    memoryCache.delete(/^products?:/); memoryCache.delete(/^variants:/); res.status(201).json({ ...variant, priceModifier: Number(variant.priceModifier) });
   } catch (err) {
     req.log.error(err);
     res.status(400).json({ error: "Create variant failed" });
@@ -361,7 +396,7 @@ router.delete("/products/:id/variants/:variantId", authenticate, requireAdmin, a
     const variantId = Number(req.params.variantId);
     await db.delete(productVariantsTable)
       .where(and(eq(productVariantsTable.id, variantId), eq(productVariantsTable.productId, productId)));
-    memoryCache.delete(/^products?:/); res.json({ message: "Variant deleted" });
+    memoryCache.delete(/^products?:/); memoryCache.delete(/^variants:/); res.json({ message: "Variant deleted" });
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Delete variant failed" });

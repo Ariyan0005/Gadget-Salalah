@@ -5,7 +5,7 @@ import {
   useGetNewArrivals,
   useGetMostDiscounted,
 } from "@workspace/api-client-react";
-import { ProductCard } from "@/components/ui/product-card";
+import { ProductCard, ProductCardSkeleton } from "@/components/ui/product-card";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,10 +21,22 @@ import { useCallback, useEffect, useState } from "react";
 import { optimizeImageUrl } from "@/lib/image-url";
 
 export default function Home() {
-  const { data: banners } = useListBanners();
-  const { data: featuredProducts } = useGetFeaturedProducts();
-  const { data: newArrivals } = useGetNewArrivals();
-  const { data: mostDiscounted } = useGetMostDiscounted();
+  const { data: banners, isLoading: isBannersLoading } = useListBanners();
+  const { data: featuredProducts, isLoading: isFeaturedLoading } = useGetFeaturedProducts();
+  const { data: newArrivals, isLoading: isNewLoading } = useGetNewArrivals();
+  const { data: mostDiscounted, isLoading: isDiscountedLoading } = useGetMostDiscounted();
+
+  // Prefetch critical pages on idle
+  useEffect(() => {
+    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+      window.requestIdleCallback(() => {
+        import("@/pages/products/index");
+        import("@/pages/products/[id]");
+        import("@/pages/categories");
+        import("@/pages/cart");
+      });
+    }
+  }, []);
 
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -141,75 +153,75 @@ export default function Home() {
         )}
       </section>
 
-      {/* ── Featured Products ──────────────────────────────────────── */}
-      {featuredProducts && featuredProducts.length > 0 && (
-        <section className="container mx-auto px-4 py-10">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <Sparkles className="h-5 w-5 text-accent fill-accent/40" />
-              <h2 className="text-xl font-black text-foreground">Featured Products</h2>
-            </div>
-            <Link
-              href="/products?featured=true"
-              className="text-sm font-semibold text-accent flex items-center gap-1 hover:gap-2 transition-all"
-            >
-              View all <ArrowRight className="h-4 w-4" />
-            </Link>
+      {/* ── Featured Products (Always rendered with skeletons to prevent CLS) ── */}
+      <section className="container mx-auto px-4 py-10">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <Sparkles className="h-5 w-5 text-accent fill-accent/40" />
+            <h2 className="text-xl font-black text-foreground">Featured Products</h2>
           </div>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {featuredProducts.slice(0, 10).map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-        </section>
-      )}
+          <Link
+            href="/products?featured=true"
+            className="text-sm font-semibold text-accent flex items-center gap-1 hover:gap-2 transition-all"
+          >
+            View all <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          {isFeaturedLoading || !featuredProducts
+            ? Array.from({ length: 10 }).map((_, i) => <ProductCardSkeleton key={i} />)
+            : featuredProducts.slice(0, 10).map((product, idx) => (
+                <ProductCard key={product.id} product={product} priority={idx < 2} />
+              ))}
+        </div>
+      </section>
 
-      {/* ── New Arrivals & Hot Deals ───────────────────────────────── */}
+      {/* ── New Arrivals & Hot Deals (Always rendered with skeletons to prevent CLS) ── */}
       <section className="container mx-auto px-4 py-8 mb-10">
         <div className="grid gap-10 lg:grid-cols-2">
-          {newArrivals && newArrivals.length > 0 && (
-            <div>
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="h-2.5 w-2.5 rounded-full bg-primary animate-pulse" />
-                  <h2 className="text-xl font-black text-foreground">New Arrivals</h2>
-                </div>
-                <Link
-                  href="/products?sortBy=newest"
-                  className="text-sm font-semibold text-primary flex items-center gap-1 hover:gap-2 transition-all"
-                >
-                  More <ArrowRight className="h-4 w-4" />
-                </Link>
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="h-2.5 w-2.5 rounded-full bg-primary animate-pulse" />
+                <h2 className="text-xl font-black text-foreground">New Arrivals</h2>
               </div>
-              <div className="grid grid-cols-2 gap-4 xl:grid-cols-3">
-                {newArrivals.slice(0, 3).map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
+              <Link
+                href="/products?sortBy=newest"
+                className="text-sm font-semibold text-primary flex items-center gap-1 hover:gap-2 transition-all"
+              >
+                More <ArrowRight className="h-4 w-4" />
+              </Link>
             </div>
-          )}
+            <div className="grid grid-cols-2 gap-4 xl:grid-cols-3">
+              {isNewLoading || !newArrivals
+                ? Array.from({ length: 3 }).map((_, i) => <ProductCardSkeleton key={i} />)
+                : newArrivals.slice(0, 3).map((product) => (
+                    <ProductCard key={product.id} product={product} />
+                  ))}
+            </div>
+          </div>
 
-          {mostDiscounted && mostDiscounted.length > 0 && (
-            <div>
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <Flame className="h-5 w-5 text-accent fill-accent/30" />
-                  <h2 className="text-xl font-black text-foreground">Hot Deals</h2>
-                </div>
-                <Link
-                  href="/products?sortBy=discount"
-                  className="text-sm font-semibold text-accent flex items-center gap-1 hover:gap-2 transition-all"
-                >
-                  See All <ArrowRight className="h-4 w-4" />
-                </Link>
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <Flame className="h-5 w-5 text-accent fill-accent/30" />
+                <h2 className="text-xl font-black text-foreground">Hot Deals</h2>
               </div>
-              <div className="grid grid-cols-2 gap-4 xl:grid-cols-3">
-                {mostDiscounted.slice(0, 3).map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
+              <Link
+                href="/products?sortBy=discount"
+                className="text-sm font-semibold text-accent flex items-center gap-1 hover:gap-2 transition-all"
+              >
+                See All <ArrowRight className="h-4 w-4" />
+              </Link>
             </div>
-          )}
+            <div className="grid grid-cols-2 gap-4 xl:grid-cols-3">
+              {isDiscountedLoading || !mostDiscounted
+                ? Array.from({ length: 3 }).map((_, i) => <ProductCardSkeleton key={i} />)
+                : mostDiscounted.slice(0, 3).map((product) => (
+                    <ProductCard key={product.id} product={product} />
+                  ))}
+            </div>
+          </div>
         </div>
       </section>
 
