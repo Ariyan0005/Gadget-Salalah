@@ -16,7 +16,7 @@ function escapeXml(value: string) {
   return value.replace(/[<>&'"]/g, (character) => entities[character] || character);
 }
 
-router.get("/sitemap.xml", async (_req, res) => {
+router.get("/sitemap.xml", async (req, res) => {
   try {
     const products = await db
       .select({ slug: productsTable.slug, updatedAt: productsTable.updatedAt })
@@ -32,10 +32,12 @@ router.get("/sitemap.xml", async (_req, res) => {
       }),
     ];
 
+    res.set("Cache-Control", "public, max-age=300, stale-while-revalidate=3600");
     res.type("application/xml").send(
       `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls.join("")}</urlset>`,
     );
   } catch (error) {
+    req.log.error(error);
     res.status(500).type("application/xml").send(
       `<?xml version="1.0" encoding="UTF-8"?><error>Sitemap unavailable</error>`,
     );

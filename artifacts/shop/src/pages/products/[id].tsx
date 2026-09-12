@@ -86,6 +86,7 @@ export default function ProductDetail() {
         path: `/products/${canonicalSlug}`,
         image: product.imageUrl,
         type: "product",
+        noindex: false,
         jsonLd: {
           "@context": "https://schema.org",
           "@type": "Product",

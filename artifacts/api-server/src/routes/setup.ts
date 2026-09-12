@@ -31,20 +31,30 @@ router.post("/setup", async (req, res) => {
       return;
     }
 
-    const { name, email, password } = req.body;
-    if (!name || !email || !password) {
+    const { name, email, password } = req.body as {
+      name?: unknown;
+      email?: unknown;
+      password?: unknown;
+    };
+    const normalizedName = typeof name === "string" ? name.trim() : "";
+    const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
+    if (!normalizedName || !normalizedEmail || typeof password !== "string") {
       res.status(400).json({ error: "name, email and password are required" });
       return;
     }
-    if (password.length < 6) {
-      res.status(400).json({ error: "Password must be at least 6 characters" });
+    if (normalizedName.length > 80 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      res.status(400).json({ error: "Please provide a valid name and email address" });
+      return;
+    }
+    if (password.length < 10) {
+      res.status(400).json({ error: "Password must be at least 10 characters" });
       return;
     }
 
     const hashed = await bcrypt.hash(password, 10);
     const [user] = await db.insert(usersTable).values({
-      name,
-      email,
+      name: normalizedName,
+      email: normalizedEmail,
       password: hashed,
       role: "admin",
     }).returning({ id: usersTable.id, name: usersTable.name, email: usersTable.email, role: usersTable.role });

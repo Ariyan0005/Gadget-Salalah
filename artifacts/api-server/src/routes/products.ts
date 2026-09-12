@@ -120,8 +120,12 @@ router.get("/products/most-discounted", async (req, res) => {
 
 router.get("/products", async (req, res) => {
   try {
-    const page = Number(req.query.page) || 1;
-    const limit = Number(req.query.limit) || 20;
+    const requestedPage = Number(req.query.page);
+    const requestedLimit = Number(req.query.limit);
+    const page = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+    const limit = Number.isInteger(requestedLimit) && requestedLimit > 0
+      ? Math.min(requestedLimit, 50)
+      : 20;
     const offset = (page - 1) * limit;
     const search = req.query.search as string | undefined;
     const categoryId = req.query.categoryId ? Number(req.query.categoryId) : undefined;
@@ -135,6 +139,19 @@ router.get("/products", async (req, res) => {
     if (cached) {
       res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
       res.json(cached);
+      return;
+    }
+
+    if (categoryId !== undefined && !Number.isInteger(categoryId)) {
+      res.status(400).json({ error: "categoryId must be an integer" });
+      return;
+    }
+    if (minPrice !== undefined && !Number.isFinite(minPrice)) {
+      res.status(400).json({ error: "minPrice must be a number" });
+      return;
+    }
+    if (maxPrice !== undefined && !Number.isFinite(maxPrice)) {
+      res.status(400).json({ error: "maxPrice must be a number" });
       return;
     }
 

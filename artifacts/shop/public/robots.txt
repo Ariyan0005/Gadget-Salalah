@@ -8,5 +8,4 @@ Disallow: /orders
 Disallow: /admin
 Disallow: /login
 Disallow: /register
-Disallow: /products?
 Sitemap: https://gadgetsalalah.com/sitemap.xml

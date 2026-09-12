@@ -149,7 +149,25 @@ export default function Home() {
           )}
           </>
         ) : (
-          <div className="h-[280px] sm:h-[380px] lg:h-[520px] w-full bg-slate-900/60 animate-pulse" />
+          <div className="relative h-[280px] sm:h-[380px] lg:h-[520px] w-full overflow-hidden bg-slate-900">
+            <img
+              src="/opengraph.jpg"
+              alt="Gadget Salalah electronics store"
+              width={1200}
+              height={630}
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
+              className="h-full w-full object-cover opacity-70"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/45 to-transparent" />
+            <div className="absolute inset-0 z-10 flex items-center px-6 md:px-20">
+              <div className="max-w-xl text-white">
+                <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-accent">Gadget Salalah</p>
+                <h1 className="text-3xl font-black leading-tight md:text-5xl">Smart tech, delivered across Oman</h1>
+              </div>
+            </div>
+          </div>
         )}
       </section>
 

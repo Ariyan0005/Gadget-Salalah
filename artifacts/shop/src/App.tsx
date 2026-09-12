@@ -89,6 +89,7 @@ function Router() {
   const isPrivate = /^\/(account|settings|orders|admin)(\/|$)/.test(path);
   const isNoindexUtility = /^\/(cart|checkout)(\/|$)/.test(path);
   const isAuth = path === "/login" || path === "/register";
+  const isProductDetail = /^\/products\/[^/]+$/.test(path);
   const isKnownPublic = [
     "/",
     "/products",
@@ -99,7 +100,7 @@ function Router() {
     "/mobile-service",
     "/spare-parts",
     "/return-policy",
-  ].includes(path);
+  ].includes(path) || isProductDetail;
 
   useSeo({
     title:
@@ -126,7 +127,12 @@ function Router() {
                           : DEFAULT_TITLE,
     description: DEFAULT_DESCRIPTION,
     path: isKnownPublic ? path : "/",
-    noindex: isPrivate || isNoindexUtility || isAuth || (path === "/products" && hasQuery) || !isKnownPublic,
+    noindex:
+      isPrivate ||
+      isNoindexUtility ||
+      isAuth ||
+      (path === "/products" && hasQuery) ||
+      !isKnownPublic,
   });
 
   return (

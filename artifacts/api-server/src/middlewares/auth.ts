@@ -1,7 +1,11 @@
 import { type Request, type Response, type NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.SESSION_SECRET || "techshop-secret-key";
+const configuredSecret = process.env.SESSION_SECRET || process.env.JWT_SECRET;
+if (!configuredSecret) {
+  throw new Error("SESSION_SECRET or JWT_SECRET must be configured before starting the API server");
+}
+const JWT_SECRET: string = configuredSecret;
 
 export interface AuthRequest extends Request {
   userId?: number;
