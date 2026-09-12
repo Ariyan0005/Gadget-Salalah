@@ -1,0 +1,51 @@
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+→ [1/5] Pulling latest code from GitHub...
+remote: Enumerating objects: 25, done.
+remote: Counting objects: 100% (25/25), done.
+remote: Compressing objects: 100% (14/14), done.
+remote: Total 20 (delta 7), reused 19 (delta 6), pack-reused
+0 (from 0)
+Unpacking objects: 100% (20/20), 2.68 MiB | 7.51 MiB/s, done.From https://github.com/Ariyan0005/Gadget-Salalah
+ * branch            main       -> FETCH_HEAD
+   9bec6ef..a47804d  main       -> origin/main
+Updating 9bec6ef..a47804d
+Fast-forward
+ ...-gadgetsalalah-Ins_1789253627593.txt |   72 +
+ ...0913_023401_Chrome_1789252529434.jpg |  Bin 0 -> 355591 bytes
+ ...0913_023408_Chrome_1789252529450.jpg |  Bin 0 -> 402587 bytes
+ ...0913_023414_Chrome_1789252529462.jpg |  Bin 0 -> 280382 bytes
+ ...0913_023419_Chrome_1789252529473.jpg |  Bin 0 -> 498235 bytes
+ ...0913_023427_Chrome_1789252529485.jpg |  Bin 0 -> 403605 bytes
+ ...0913_023434_Chrome_1789252529496.jpg |  Bin 0 -> 427826 bytes
+ ...0913_023448_Chrome_1789252529506.jpg |  Bin 0 -> 339540 bytes
+ ...0913_023459_Chrome_1789252529517.jpg |  Bin 0 -> 452957 bytes
+ package.json                            |   11 -
+ pnpm-lock.yaml                          | 6262 +++++-------
+ pnpm-workspace.yaml                     |    7 +
+ 12 files changed, 2508 insertions(+), 3844 deletions(-)
+ create mode 100644 attached_assets/Pasted-home-var-www-gadgetsalalah-cd-var-www-gadgetsalalah-Ins_1789253627593.txt
+ create mode 100644 attached_assets/Screenshot_20260913_023401_Chrome_1789252529434.jpg
+ create mode 100644 attached_assets/Screenshot_20260913_023408_Chrome_1789252529450.jpg
+ create mode 100644 attached_assets/Screenshot_20260913_023414_Chrome_1789252529462.jpg
+ create mode 100644 attached_assets/Screenshot_20260913_023419_Chrome_1789252529473.jpg
+ create mode 100644 attached_assets/Screenshot_20260913_023427_Chrome_1789252529485.jpg
+ create mode 100644 attached_assets/Screenshot_20260913_023434_Chrome_1789252529496.jpg
+ create mode 100644 attached_assets/Screenshot_20260913_023448_Chrome_1789252529506.jpg
+ create mode 100644 attached_assets/Screenshot_20260913_023459_Chrome_1789252529517.jpg
+→ [2/5] Installing dependencies...
+Scope: all 9 workspace projects
+✓ Lockfile passes supply-chain policies (554 entries in 7.8s)Update available! 12.3.4 → 12.4.1.
+Changelog: https://pnpm.io/v/12.4.1
+To update, run: curl -fsSL https://get.pnpm.io/install.sh | sh -
+Lockfile is up to date, resolution step is skipped
+Packages: +47 -48
++++++++++++++++++++++++++++++------------------------------
+Progress: resolved 47, reused 8, downloaded 39, added 47, done
+. preinstall$ sh -c 'rm -f package-lock.json yarn.lock; ca…
+└─ Done in 13ms
+Error: ERR_PNPM_IGNORED_BUILDS
+  × installing dependencies
+  ╰─▶ Ignored build scripts: esbuild@0.27.3
+  help: Run "pnpm approve-builds" to pick which
+        dependencies should be allowed to run scripts.
+ariyank@myhome:/var/www/gadgetsalalah$
