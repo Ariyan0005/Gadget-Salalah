@@ -1,0 +1,72 @@
+home:/var/www/gadgetsalalah$ cd /var/www/gadgetsalalah
+# Inspect the local edit first
+git diff -- pnpm-workspace.yaml
+# Make a backup outside the repository
+cp pnpm-workspace.yaml /tmp/pnpm-workspace.yaml.backup
+# Discard only the local change to this file
+git restore -- pnpm-workspace.yaml
+# Confirm the working tree is clean
+git status --short
+# Pull and deploy
+bash deploy.sh
+diff --git a/pnpm-workspace.yaml b/pnpm-workspace.yaml
+index 34d334c..aef07da 100644
+--- a/pnpm-workspace.yaml
++++ b/pnpm-workspace.yaml
+@@ -68,12 +68,6 @@ catalog:
+ autoInstallPeers: false
+-onlyBuiltDependencies:
+-  - '@swc/core'
+-  - esbuild
+-  - msw
+-  - unrs-resolver
+-
+ overrides:
+   # replit uses linux-x64 only, we can exclude all other platforms
+   "esbuild>@esbuild/darwin-arm64": "-"
+@@ -158,3 +152,6 @@ overrides:
+   # drizzle-kit uses esbuild internally on an older version
+that's vulnerable, this overrides it
+   "@esbuild-kit/esm-loader": "npm:tsx@^4.21.0"
+   esbuild: "0.27.3"
++
+:...skipping...
+diff --git a/pnpm-workspace.yaml b/pnpm-workspace.yaml
+index 34d334c..aef07da 100644
+--- a/pnpm-workspace.yaml
++++ b/pnpm-workspace.yaml
+@@ -68,12 +68,6 @@ catalog:
+ autoInstallPeers: false
+-onlyBuiltDependencies:
+-  - '@swc/core'
+-  - esbuild
+-  - msw
+-  - unrs-resolver
+-
+ overrides:
+   # replit uses linux-x64 only, we can exclude all other platforms
+   "esbuild>@esbuild/darwin-arm64": "-"
+@@ -158,3 +152,6 @@ overrides:
+   # drizzle-kit uses esbuild internally on an older version
+diff --git a/pnpm-workspace.yaml b/pnpm-workspace.yaml
+index 34d334c..aef07da 100644
+--- a/pnpm-workspace.yaml
++++ b/pnpm-workspace.yaml
+@@ -68,12 +68,6 @@ catalog:
+ autoInstallPeers: false
+-onlyBuiltDependencies:
+-  - '@swc/core'
+-  - esbuild
+-  - msw
+-  - unrs-resolver
+-
+ overrides:
+   # replit uses linux-x64 only, we can exclude all other platforms
+   "esbuild>@esbuild/darwin-arm64": "-"
+@@ -158,3 +152,6 @@ overrides:
+   # drizzle-kit uses esbuild internally on an older version
+that's vulnerable, this overrides it
+   "@esbuild-kit/esm-loader": "npm:tsx@^4.21.0"
+   esbuild: "0.27.3"
++
+:
