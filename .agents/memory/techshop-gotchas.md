@@ -23,7 +23,7 @@ description: Sharp edges discovered while building the TechShop e-commerce app â
 
 **Why:** Drizzle generates its own internal alias names; user-supplied aliases like `oi` are not recognized.
 
-6. **Admin credentials**: `admin@techshop.com` / `admin123`, demo user: `user@techshop.com` / `admin123`. Password hash must be regenerated if DB is reset (use bcryptjs 3.0.3).
+6. **Admin provisioning**: the first administrator is created through the setup flow; never document or commit default credentials. Password hashes must be regenerated if the DB is reset (use bcryptjs 3.0.3).
 
 7. **Watch for nested duplicate dirs after a repo merge** â€” a prior merge (folding `shop_real` into `shop`) left stray nested dirs like `src/src` and `public/public` containing an *older, differently-branded* copy of files (old favicon, unused hero images) that vite never serves. Always check for `<dir>/<dir>` duplication after merging artifact sources and delete the dead copy.
 

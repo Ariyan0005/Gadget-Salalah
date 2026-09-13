@@ -1,6 +1,11 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/context/AuthContext";
-import { useGetCart, useListCategories, getGetCartQueryKey } from "@workspace/api-client-react";
+import {
+  useGetCart,
+  useListCategories,
+  getGetCartQueryKey,
+  getListCategoriesQueryKey,
+} from "@workspace/api-client-react";
 import {
   ShoppingCart, Menu, Search, User, LogOut, ArrowLeft, Check, X,
   Home as HomeIcon, Navigation, ChevronRight, Grid3X3, Wrench,
@@ -43,6 +48,12 @@ type CategoryNode = {
 export function Header() {
   const { user, logout } = useAuth();
   const [location, setLocation] = useLocation();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuTab, setMenuTab] = useState<"categories" | "navigation">("categories");
+  const [selectedCategory, setSelectedCategory] = useState<CategoryNode | null>(null);
+  const [annIdx, setAnnIdx] = useState(0);
+  const [annVisible, setAnnVisible] = useState(true);
   const { data: userCart } = useGetCart({ query: { enabled: !!user, queryKey: getGetCartQueryKey() } });
   const guestCart = useGuestCart();
   const {
@@ -50,13 +61,7 @@ export function Header() {
     isLoading: categoriesLoading,
     isError: categoriesError,
     refetch: refetchCategories,
-  } = useListCategories();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [menuTab, setMenuTab] = useState<"categories" | "navigation">("categories");
-  const [selectedCategory, setSelectedCategory] = useState<CategoryNode | null>(null);
-  const [annIdx, setAnnIdx] = useState(0);
-  const [annVisible, setAnnVisible] = useState(true);
+  } = useListCategories({ query: { enabled: menuOpen, queryKey: getListCategoriesQueryKey() } });
 
   const cart = user ? userCart : guestCart;
   const cartCount = cart?.items?.reduce((s: number, i: { quantity: number }) => s + i.quantity, 0) ?? 0;

@@ -1,15 +1,40 @@
 import { Link } from "wouter";
-import { useListCategories } from "@workspace/api-client-react";
+import { getListCategoriesQueryKey, useListCategories } from "@workspace/api-client-react";
 import { useAuth } from "@/context/AuthContext";
 import { Facebook, Instagram, Mail, Phone, MapPin } from "lucide-react";
 import { FaWhatsapp } from "react-icons/fa";
+import { useEffect, useRef, useState } from "react";
 
 export function Footer() {
-  const { data: categories } = useListCategories();
+  const footerRef = useRef<HTMLElement>(null);
+  const [categoriesReady, setCategoriesReady] = useState(false);
+  const { data: categories } = useListCategories({
+    query: { enabled: categoriesReady, queryKey: getListCategoriesQueryKey() },
+  });
   const { user } = useAuth();
 
+  useEffect(() => {
+    const footer = footerRef.current;
+    if (!footer || typeof IntersectionObserver === "undefined") {
+      setCategoriesReady(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setCategoriesReady(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "200px" },
+    );
+    observer.observe(footer);
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <footer className="bg-[#1a2332] text-slate-300">
+    <footer ref={footerRef} className="bg-[#1a2332] text-slate-300">
       <div className="container mx-auto px-4 pt-12 pb-6">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4 lg:gap-12">
 

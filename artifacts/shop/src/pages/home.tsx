@@ -4,6 +4,8 @@ import {
   useGetFeaturedProducts,
   useGetNewArrivals,
   useGetMostDiscounted,
+  getGetNewArrivalsQueryKey,
+  getGetMostDiscountedQueryKey,
 } from "@workspace/api-client-react";
 import { ProductCard, ProductCardSkeleton } from "@/components/ui/product-card";
 import { Link } from "wouter";
@@ -23,20 +25,34 @@ import { optimizeImageUrl } from "@/lib/image-url";
 export default function Home() {
   const { data: banners, isLoading: isBannersLoading } = useListBanners();
   const { data: featuredProducts, isLoading: isFeaturedLoading } = useGetFeaturedProducts();
-  const { data: newArrivals, isLoading: isNewLoading } = useGetNewArrivals();
-  const { data: mostDiscounted, isLoading: isDiscountedLoading } = useGetMostDiscounted();
+  const [belowFoldReady, setBelowFoldReady] = useState(false);
 
-  // Prefetch critical pages on idle
+  // Keep the first viewport focused on the hero and featured products. The
+  // lower sections still load automatically once the browser is idle.
   useEffect(() => {
-    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
-      window.requestIdleCallback(() => {
-        import("@/pages/products/index");
-        import("@/pages/products/[id]");
-        import("@/pages/categories");
-        import("@/pages/cart");
-      });
+    if (typeof window === "undefined") return;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    let idleId: number | undefined;
+    const ready = () => setBelowFoldReady(true);
+
+    if ("requestIdleCallback" in window) {
+      idleId = window.requestIdleCallback(ready, { timeout: 1500 });
+    } else {
+      timeoutId = setTimeout(ready, 1000);
     }
+
+    return () => {
+      if (idleId !== undefined) window.cancelIdleCallback(idleId);
+      if (timeoutId !== undefined) clearTimeout(timeoutId);
+    };
   }, []);
+
+  const { data: newArrivals, isLoading: isNewLoading } = useGetNewArrivals({
+    query: { enabled: belowFoldReady, queryKey: getGetNewArrivalsQueryKey() },
+  });
+  const { data: mostDiscounted, isLoading: isDiscountedLoading } = useGetMostDiscounted({
+    query: { enabled: belowFoldReady, queryKey: getGetMostDiscountedQueryKey() },
+  });
 
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
   const [selectedIndex, setSelectedIndex] = useState(0);

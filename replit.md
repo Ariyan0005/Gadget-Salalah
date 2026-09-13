@@ -47,7 +47,7 @@ Oman's premier e-commerce store for smartphones, gadgets, accessories, and elect
 
 - **Customer storefront**: Home with hero slider, shop by category, featured/new/discounted product grids, product listing with filters (category, price range, sort), product detail page, cart, checkout, order history, order tracking by tracking ID.
 - **Admin panel** (`/admin/*`): Dashboard with Recharts stats (orders by status, revenue by category), product management (CRUD + stock), category management, order status updates, user role/active management, banner management.
-- **Auth**: Register, login, JWT-based sessions. Admin: `admin@techshop.com` / `admin123`. Demo user: `user@techshop.com` / `admin123`.
+- **Auth**: Register, login, JWT-based sessions. The first administrator is provisioned through the protected setup flow.
 
 ## User preferences
 
@@ -61,7 +61,7 @@ Oman's premier e-commerce store for smartphones, gadgets, accessories, and elect
 - After any `lib/db/src/schema/` change, run `pnpm run typecheck:libs` before typechecking `api-server` — otherwise the old declarations are used and you get "not exported" TS errors.
 - `bcryptjs` version in this project is `3.0.3` (not 2.x) — module path is `/node_modules/.pnpm/bcryptjs@3.0.3/node_modules/bcryptjs`.
 - Banner `imageUrl` values should NOT include text in the URL (e.g., avoid `placehold.co?text=...`) — the slider overlays its own text on top.
-- JWT_SECRET falls back to `SESSION_SECRET` env var in `auth.ts`.
+- JWT signing requires `SESSION_SECRET` or `JWT_SECRET`; there is no hardcoded fallback.
 - Deep imports from `@workspace/api-client-react/src/custom-fetch` don't work — use the index: `import { setAuthTokenGetter } from "@workspace/api-client-react"`.
 
 ## Pointers
